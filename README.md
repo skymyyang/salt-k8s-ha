@@ -122,7 +122,7 @@ k8s-n1
 
 2.2 获取本项目代码，并放置在/srv目录
 ```bash
-[root@linux-node1 ~]# git clone https://github.com/unixhot/salt-kubernetes.git
+[root@linux-node1 ~]# git clone https://github.com/skymyyang/salt-k8s-ha.git
 [root@linux-node1 ~]# cd salt-kubernetes/
 [root@linux-node1 ~]# mv * /srv/
 [root@linux-node1 srv]# /bin/cp /srv/roster /etc/salt/roster
@@ -257,6 +257,7 @@ VIP_IF: "ens160"
 执行高级状态，会根据定义的角色再对应的机器部署对应的服务
 
 5.2 部署Etcd，由于Etcd是基础组建，需要先部署，目标为部署etcd的节点。
+
 ```bash
 [root@k8s-m1 ~]# salt-ssh -L 'k8s-m1,k8s-m2,k8s-m3' state.sls k8s.etcd
 ```
