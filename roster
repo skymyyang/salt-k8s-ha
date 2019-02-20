@@ -6,8 +6,8 @@
 # Description:  Salt SSH Roster
 #******************************************
 
-k8s-m1:
-  host: 192.168.150.135
+linux-node1:
+  host: 192.168.150.141
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts: 
@@ -16,8 +16,8 @@ k8s-m1:
       etcd-role: node
       etcd-name: etcd-node1
 
-k8s-m2:
-  host: 192.168.150.136
+linux-node2:
+  host: 192.168.150.142
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -26,8 +26,8 @@ k8s-m2:
       etcd-role: node
       etcd-name: etcd-node2
 
-k8s-m3:
-  host: 192.168.150.137
+linux-node3:
+  host: 192.168.150.143
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -36,8 +36,8 @@ k8s-m3:
       etcd-role: node
       etcd-name: etcd-node3
 
-k8s-n1:
-  host: 192.168.150.138
+linux-node4:
+  host: 192.168.150.144
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:

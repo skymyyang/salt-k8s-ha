@@ -110,14 +110,16 @@ linux-node4
 [root@linux-node1 ~]# ssh-copy-id linux-node2
 [root@linux-node1 ~]# ssh-copy-id linux-node3
 [root@linux-node1 ~]# ssh-copy-id linux-node4
+[root@linux-node1 ~]# scp /etc/hosts linux-node2:/etc/
+[root@linux-node1 ~]# scp /etc/hosts linux-node3:/etc/
+[root@linux-node1 ~]# scp /etc/hosts linux-node4:/etc/
 ```
 
 ## 2.安装Salt-SSH并克隆本项目代码。
 
 2.1 安装Salt SSH（注意：老版本的Salt SSH不支持Roster定义Grains，需要2017.7.4以上版本）
 ```bash
-[root@linux-node1 ~]# yum install https://mirrors.aliyun.com/epel/epel-release-latest-7.noarch.rpm
-[root@linux-node1 ~]# yum install https://mirrors.aliyun.com/saltstack/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
+[root@linux-node1 ~]# yum install -y https://mirrors.aliyun.com/saltstack/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
 [root@linux-node1 ~]# sed -i "s/repo.saltstack.com/mirrors.aliyun.com\/saltstack/g" /etc/yum.repos.d/salt-latest.repo
 [root@linux-node1 ~]# yum install -y salt-ssh git unzip
 ```

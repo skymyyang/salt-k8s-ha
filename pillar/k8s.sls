@@ -7,21 +7,21 @@
 #********************************************
 
 #设置Master的IP地址(必须修改)
-MASTER_IP_M1: "192.168.150.135"
-MASTER_IP_M2: "192.168.150.136"
-MASTER_IP_M3: "192.168.150.137"
+MASTER_IP_M1: "192.168.150.141"
+MASTER_IP_M2: "192.168.150.142"
+MASTER_IP_M3: "192.168.150.143"
 #设置Master的HOSTNAME完整的FQDN名称(必须修改)
-MASTER_H1: "k8s-m1"
-MASTER_H2: "k8s-m2"
-MASTER_H3: "k8s-m3"
+MASTER_H1: "linux-node1"
+MASTER_H2: "linux-node2"
+MASTER_H3: "linux-node3"
 
 #设置ETCD集群访问地址（必须修改）
-ETCD_ENDPOINTS: "https://192.168.150.135:2379,https://192.168.150.136:2379,https://192.168.150.137:2379"
+ETCD_ENDPOINTS: "https://192.168.150.141:2379,https://192.168.150.142:2379,https://192.168.150.143:2379"
 
 FLANNEL_ETCD_PREFIX: "/kubernetes/network"
 
 #设置ETCD集群初始化列表（必须修改）
-ETCD_CLUSTER: "etcd-node1=https://192.168.150.135:2380,etcd-node2=https://192.168.150.136:2380,etcd-node3=https://192.168.150.137:2380"
+ETCD_CLUSTER: "etcd-node1=https://192.168.150.141:2380,etcd-node2=https://192.168.150.142:2380,etcd-node3=https://192.168.150.143:2380"
 
 #通过Grains FQDN自动获取本机IP地址，请注意保证主机名解析到本机IP地址
 NODE_IP: {{ grains['fqdn_ip4'][0] }}
