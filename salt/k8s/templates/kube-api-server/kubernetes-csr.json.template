@@ -1,0 +1,30 @@
+{
+  "CN": "kubernetes",
+  "hosts": [
+    "127.0.0.1",
+    "{{ MASTER_IP_M1 }}",
+    "{{ MASTER_IP_M2 }}",
+    "{{ MASTER_IP_M3 }}",
+    "{{ CLUSTER_KUBERNETES_SVC_IP }}",
+    "{{ MASTER_VIP }}",
+    "kubernetes",
+    "kubernetes.default",
+    "kubernetes.default.svc",
+    "kubernetes.default.svc.cluster",
+    "kubernetes.default.svc.cluster.local"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "BeiJing",
+      "L": "BeiJing",
+      "O": "k8s",
+      "OU": "System"
+    }
+  ]
+}
+

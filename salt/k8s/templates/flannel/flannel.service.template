@@ -1,0 +1,16 @@
+[Unit]
+Description=Flanneld overlay address etcd agent
+After=network.target
+Before=docker.service
+
+[Service]
+ExecStartPre=/opt/kubernetes/bin/remove-docker0.sh
+ExecStart=/opt/kubernetes/bin/flanneld -etcd-cafile=/opt/kubernetes/ssl/ca.pem -etcd-certfile=/opt/kubernetes/ssl/flanneld.pem -etcd-keyfile=/opt/kubernetes/ssl/flanneld-key.pem -etcd-endpoints={{ ETCD_ENDPOINTS }} -etcd-prefix={{ FLANNEL_ETCD_PREFIX }} -iface={{ VIP_IF }}
+ExecStartPost=/opt/kubernetes/bin/mk-docker-opts.sh -k DOCKER_NETWORK_OPTIONS -d /run/flannel/docker
+
+Type=notify
+
+[Install]
+WantedBy=multi-user.target
+RequiredBy=docker.service
+

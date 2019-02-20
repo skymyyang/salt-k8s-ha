@@ -1,0 +1,22 @@
+{
+    "CN": "system:kube-scheduler",
+    "hosts": [
+      "127.0.0.1",
+      "{{ MASTER_IP_M1 }}",
+      "{{ MASTER_IP_M2 }}",
+      "{{ MASTER_IP_M3 }}"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+      {
+        "C": "CN",
+        "ST": "BeiJing",
+        "L": "BeiJing",
+        "O": "system:kube-scheduler",
+        "OU": "System"
+      }
+    ]
+}

@@ -1,0 +1,10 @@
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+bindAddress: {{ NODE_IP }}
+clientConnection:
+  kubeconfig: /opt/kubernetes/cfg/kube-proxy.kubeconfig
+clusterCIDR: {{ SERVICE_CIDR }}
+healthzBindAddress: {{ NODE_IP }}:10256
+hostnameOverride: {{ HOST_NAME }}
+kind: KubeProxyConfiguration
+metricsBindAddress: {{ NODE_IP }}:10249
+mode: "ipvs"
