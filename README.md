@@ -372,69 +372,48 @@ kubectl taint node k8s-m3 node-role.kubernetes.io/master=k8s-m3:PreferNoSchedule
 该BUG不影响svc内部之间的调用，但是会影响在节点上去访问对应的svc出现无法访问的情况。如果svc的后端pod在当前对应的节点上是可以进行访问的。
 
 BUG重现：
-
+1. 创建Nginx 测试的svc
 ```bash
-[root@k8s-m1 k8s]# kubectl get svc
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE
-admin-auth-server-service       ClusterIP   10.245.222.77    <none>        8003/TCP                        32d
-admin-gateway-server            NodePort    10.245.157.121   <none>        8002:30082/TCP,8502:30086/TCP   32d
-erp-mechanisms-service-server   ClusterIP   10.245.212.18    <none>        7102/TCP                        32d
-grammarback-server              NodePort    10.245.155.92    <none>        7104:30191/TCP                  32d
-kubernetes                      ClusterIP   10.245.0.1       <none>        443/TCP                         32d
-monitor-service-server          NodePort    10.245.88.137    <none>        8040:30195/TCP                  32d
-nginx-service                   ClusterIP   10.245.227.62    <none>        80/TCP                          25d
-pay-center-service-server       ClusterIP   10.245.49.60     <none>        7110/TCP                        32d
-sleuth-zipkin-service-server    NodePort    10.245.254.192   <none>        9411:30196/TCP,9412:30197/TCP   32d
-student-gateway-server          NodePort    10.245.210.19    <none>        8001:30081/TCP,8501:30085/TCP   32d
-```
-这个时候我再k8s-m1节点去访问nginx-service是无法访问的。
-
-
-如果我再改svc对应的pod所在的节点，进行访问。这个时候是可以正常返回的。
-
-```bash
-
-#这里我们可以看到该nginx的pod所在的节点为k8s-n3
-[root@k8s-m1 ~]# kubectl get pod -o wide
-NAME                                                  READY   STATUS    RESTARTS   AGE   IP             NODE     NOMINATED NODE
-admin-auth-server-deployment-75854d9688-w8l9r         1/1     Running   4          32d   10.244.91.47   k8s-n2   <none>
-admin-gateway-deployment-794d74559f-wqzdq             1/1     Running   4          32d   10.244.91.45   k8s-n2   <none>
-common-service-deployment-655979f885-zsk8t            1/1     Running   2          25d   10.244.91.41   k8s-n2   <none>
-data-collection-service-deployment-54f5c865fc-pz5bh   1/1     Running   1          27d   10.244.36.28   k8s-n3   <none>
-erp-mechanisms-service-deployment-7d75b6b88b-ztbkf    1/1     Running   2          32d   10.244.92.27   k8s-n4   <none>
-gmr-server-deployment-56d789f9d6-sn46l                1/1     Running   0          22d   10.244.41.30   k8s-n1   <none>
-grammarback-service-deployment-55f7fd8df9-ft6c7       1/1     Running   2          32d   10.244.92.22   k8s-n4   <none>
-manage-service-deployment-5d65d44b75-rg88x            1/1     Running   1          27d   10.244.36.27   k8s-n3   <none>
-medals-service-deployment-6fc7945c4f-4gl5v            1/1     Running   4          32d   10.244.91.46   k8s-n2   <none>
-monitor-service-deployment-86674d75dd-f5g77           1/1     Running   2          32d   10.244.41.22   k8s-n1   <none>
-nginx                                                 1/1     Running   1          26d   10.244.36.24   k8s-n3   <none>
-pay-center-service-deployment-5f59fdc597-fqdgk        1/1     Running   8          32d   10.244.91.42   k8s-n2   <none>
-sleuth-zipkin-service-deployment-dd5fc5665-kgrkm      1/1     Running   1          32d   10.244.36.29   k8s-n3   <none>
-statistics-service-deployment-96f8df846-sd8zh         1/1     Running   2          32d   10.244.92.25   k8s-n4   <none>
-student-gateway-deployment-7b7768d78f-cj259           1/1     Running   2          28d   10.244.41.25   k8s-n1   <none>
-study-service-deployment-6c89bb9cdf-kcf9h             1/1     Running   0          20d   10.244.91.51   k8s-n2   <none>
-task-service-deployment-7d8fc4d9c5-kncjw              1/1     Running   0          20d   10.244.36.31   k8s-n3   <none>
-teach-research-service-deployment-65c86cdf74-wqx8h    1/1     Running   0          30m   10.244.41.37   k8s-n1   <none>
-teacher-service-deployment-7bc8949f7d-ws9xz           1/1     Running   0          21d   10.244.91.50   k8s-n2   <none>
-user-center-service-deployment-5d85769ddc-mjmfc       1/1     Running   2          32d   10.244.41.23   k8s-n1   <none>
-usercenter-service-deployment-74d9675d5c-hnqjz        1/1     Running   0          21d   10.244.92.29   k8s-n4   <none>
-word-job-service-deployment-66c775dc5b-6svr5          1/1     Running   0          19d   10.244.92.35   k8s-n4   <none>
-word-service-deployment-5d968cd859-k9zmg              1/1     Running   0          19d   10.244.41.35   k8s-n1   <none>
-#我们ssh到k8s-n3节点上。
-
-#这里可以看到HTML页面的返回。
-[root@k8s-n3 ~]# curl http://10.245.227.62
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-    <head>
-        <title>Test Page for the Nginx HTTP Server on Fedora</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <style type="text/css">
-          ................
+[root@linux-node1 k8s]# kubectl apply -f /srv/addons/Test/nginx-test.yaml 
+[root@linux-node1 addons]# kubectl get svc
+NAME            TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+kubernetes      ClusterIP   10.1.0.1       <none>        443/TCP   33m
+nginx-service   ClusterIP   10.1.221.156   <none>        80/TCP    4m54s
 ```
 
-以下链接是我提交的issue，不过到现在还么有解决这个bug，唯一的解决办法是把kube-proxy的模式由ipvs改为iptables。这里也希望大家能帮忙解决一下。
+2. 查看nginx-svc对应的pod所在的节点,如下代码所示，我们可以看到nginx在Linux-node1节点上。
+
+```bash
+[root@linux-node1 addons]# kubectl get pod -o wide
+NAME                        READY   STATUS    RESTARTS   AGE     IP          NODE          NOMINATED NODE
+net-test-5786f8b986-ptkqn   1/1     Running   0          14m     10.2.42.2   linux-node1   <none>
+net-test-5786f8b986-z5q7g   1/1     Running   0          14m     10.2.26.2   linux-node2   <none>
+nginx                       1/1     Running   0          5m33s   10.2.42.3   linux-node1   <none>
+```
+3. 在node1节点上我们使用 `curl http://10.2.42.3` ,可以看到是有html页面代码返回的。而当我们在linux-node2节点上使用 `curl http://10.2.42.3` 没有结果页面返回且超时。
+
+4. 我们使用 `ipvsadm -Ln ` 是可以查看到后端服务器的。
+
+```bash
+[root@linux-node1 addons]# ipvsadm -Ln 
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port Scheduler Flags
+  -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+TCP  10.1.0.1:443 rr
+  -> 192.168.150.141:6443         Masq    1      0          0         
+  -> 192.168.150.142:6443         Masq    1      0          0         
+  -> 192.168.150.143:6443         Masq    1      0          0         
+TCP  10.1.0.2:53 rr
+  -> 10.2.25.2:53                 Masq    1      0          0         
+  -> 10.2.33.2:53                 Masq    1      0          0         
+TCP  10.1.221.156:80 rr
+  -> 10.2.42.3:80                 Masq    1      0          0         
+UDP  10.1.0.2:53 rr
+  -> 10.2.25.2:53                 Masq    1      0          0         
+  -> 10.2.33.2:53                 Masq    1      0          0
+```
+
+5. 以下链接是我提交的issue，不过到现在还没有解决这个bug，唯一的解决办法是把kube-proxy的模式由ipvs改为iptables。这里也希望大家能帮忙解决一下。
 
 ```
 https://github.com/opsnull/follow-me-install-kubernetes-cluster/issues/386
