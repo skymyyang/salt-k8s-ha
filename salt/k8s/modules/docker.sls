@@ -12,7 +12,7 @@ docker-install:
   cmd.run:
     - name: yum install -y yum-utils device-mapper-persistent-data lvm2 && yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
   pkg.installed:
-    - name: docker-ce-18.06.0.ce-3.el7
+    - name: docker-ce
 docker-config-dir:
   file.directory:
     - name: /etc/docker
@@ -43,10 +43,10 @@ docker-service:
     - watch:
       - file: docker-daemon-config
 
-{# docker-config:
-  file.managed:
-    - name: /opt/kubernetes/cfg/docker
-    - source: salt://k8s/templates/docker/docker-config.template
-    - user: root
-    - group: root
-    - mode: 644 #}
+#docker-config:
+#  file.managed:
+#    - name: /opt/kubernetes/cfg/docker
+#    - source: salt://k8s/templates/docker/docker-config.template
+#    - user: root
+#    - group: root
+#    - mode: 644

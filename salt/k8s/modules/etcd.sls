@@ -20,13 +20,13 @@ etcd-bin:
     - group: root
     - mode: 755
 
-{# etcdctl-bin:
-  file.managed:
-    - name: /opt/kubernetes/bin/etcdctl
-    - source: salt://k8s/files/{{ etcd_version }}/etcdctl
-    - user: root
-    - group: root
-    - mode: 755 #}
+#etcdctl-bin:
+#  file.managed:
+#    - name: /opt/kubernetes/bin/etcdctl
+#    - source: salt://k8s/files/{{ etcd_version }}/etcdctl
+#    - user: root
+#    - group: root
+#    - mode: 755
 
 ectd-csr-json:
   file.managed:

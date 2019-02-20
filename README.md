@@ -60,30 +60,31 @@
 ## 0.系统初始化(必备)
 1. 设置主机名！！！
 ```
-[root@k8s-m1 ~]# cat /etc/hostname 
-k8s-m1
+[root@linux-node1 ~]# cat /etc/hostname 
+linux-node1
 
-[root@k8s-m2 ~]# cat /etc/hostname 
-k8s-m2
+[root@linux-node2 ~]# cat /etc/hostname 
+linux-node2
 
-[root@k8s-m3 ~]# cat /etc/hostname 
-k8s-m3
+[root@linux-node3 ~]# cat /etc/hostname 
+linux-node3
 
-[root@k8s-n1 ~]# cat /etc/hostname 
-k8s-n1
+[root@linux-node4 ~]# cat /etc/hostname 
+linux-node4
 
 ```
 2. 设置/etc/hosts保证主机名能够解析
-```
+
+```bash
 [root@linux-node1 ~]# cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-172.16.18.201 k8s-m1
-172.16.18.202 k8s-m2
-172.16.18.203 k8s-m3
-172.16.18.204 k8s-n1
-
+192.168.150.141 linux-node1
+192.168.150.142 linux-node2
+192.168.150.143 linux-node3
+192.168.150.144 linux-node4
 ```
+
 3. 关闭SELinux和防火墙以及NetworkManager
 
    ```bash
@@ -105,9 +106,10 @@ k8s-n1
 ## 1.设置部署节点到其它所有节点的SSH免密码登录（包括本机）
 ```bash
 [root@linux-node1 ~]# ssh-keygen -t rsa
-[root@linux-node1 ~]# ssh-copy-id k8s-m1
-[root@linux-node1 ~]# ssh-copy-id k8s-m2
-[root@linux-node1 ~]# ssh-copy-id k8s-m3
+[root@linux-node1 ~]# ssh-copy-id linux-node1
+[root@linux-node1 ~]# ssh-copy-id linux-node2
+[root@linux-node1 ~]# ssh-copy-id linux-node3
+[root@linux-node1 ~]# ssh-copy-id linux-node4
 ```
 
 ## 2.安装Salt-SSH并克隆本项目代码。
@@ -121,9 +123,10 @@ k8s-n1
 ```
 
 2.2 获取本项目代码，并放置在/srv目录
+
 ```bash
 [root@linux-node1 ~]# git clone https://github.com/skymyyang/salt-k8s-ha.git
-[root@linux-node1 ~]# cd salt-kubernetes/
+[root@linux-node1 ~]# cd salt-k8s-ha/
 [root@linux-node1 ~]# mv * /srv/
 [root@linux-node1 srv]# /bin/cp /srv/roster /etc/salt/roster
 [root@linux-node1 srv]# /bin/cp /srv/master /etc/salt/master
@@ -154,19 +157,19 @@ drwxr-xr-x 3 root root  17 Jan 18 19:19 k8s-v1.12.5
 - etcd-name: 如果对一台机器设置了etcd-role就必须设置etcd-name
 
 ```yaml
-[root@k8s-m1 ~]# vim /etc/salt/roster 
-k8s-m1:
-  host: 172.16.18.201
+[root@linux-node1 ~]# vim /etc/salt/roster 
+linux-node1:
+  host: 192.168.150.141
   user: root
   priv: /root/.ssh/id_rsa
-  minion_opts:
+  minion_opts: 
     grains:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
 
-k8s-m2:
-  host: 172.16.18.202
+linux-node2:
+  host: 192.168.150.142
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -175,8 +178,8 @@ k8s-m2:
       etcd-role: node
       etcd-name: etcd-node2
 
-k8s-m3:
-  host: 172.16.18.203
+linux-node3:
+  host: 192.168.150.143
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -184,8 +187,9 @@ k8s-m3:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node3
-k8s-n1:
-  host: 172.16.18.204
+
+linux-node4:
+  host: 192.168.150.144
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -197,21 +201,21 @@ k8s-n1:
 ```bash
 [root@k8s-m1 ~]# vim /srv/pillar/k8s.sls
 #设置Master的IP地址(必须修改)
-MASTER_IP_M1: "172.16.18.201"
-MASTER_IP_M2: "172.16.18.202"
-MASTER_IP_M3: "172.16.18.203"
+MASTER_IP_M1: "192.168.150.141"
+MASTER_IP_M2: "192.168.150.142"
+MASTER_IP_M3: "192.168.150.143"
 #设置Master的HOSTNAME完整的FQDN名称(必须修改)
-MASTER_H1: "k8s-m1"
-MASTER_H2: "k8s-m2"
-MASTER_H3: "k8s-m3"
+MASTER_H1: "linux-node1"
+MASTER_H2: "linux-node2"
+MASTER_H3: "linux-node3"
 
 #设置ETCD集群访问地址（必须修改）
-ETCD_ENDPOINTS: "https://172.16.18.201:2379,https://172.16.18.202:2379,https://172.16.18.203:2379"
+ETCD_ENDPOINTS: "https://192.168.150.141:2379,https://192.168.150.142:2379,https://192.168.150.143:2379"
 
 FLANNEL_ETCD_PREFIX: "/kubernetes/network"
 
 #设置ETCD集群初始化列表（必须修改）
-ETCD_CLUSTER: "etcd-node1=https://172.16.18.201:2380,etcd-node2=https://172.16.18.202:2380,etcd-node3=https://172.16.18.203:2380"
+ETCD_CLUSTER: "etcd-node1=https://192.168.150.141:2380,etcd-node2=https://192.168.150.142:2380,etcd-node3=https://192.168.150.143:2380"
 
 #通过Grains FQDN自动获取本机IP地址，请注意保证主机名解析到本机IP地址
 NODE_IP: {{ grains['fqdn_ip4'][0] }}
@@ -222,28 +226,32 @@ TOKEN_ID: "be8dad"
 TOKEN_SECRET: "da8a699a46edc482"
 ENCRYPTION_KEY: "8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA="
 #配置Service IP地址段
-SERVICE_CIDR: "10.245.0.0/16"
+SERVICE_CIDR: "10.1.0.0/16"
 
 #Kubernetes服务 IP (从 SERVICE_CIDR 中预分配)
-CLUSTER_KUBERNETES_SVC_IP: "10.245.0.1"
+CLUSTER_KUBERNETES_SVC_IP: "10.1.0.1"
 
 #Kubernetes DNS 服务 IP (从 SERVICE_CIDR 中预分配)
-CLUSTER_DNS_SVC_IP: "10.245.0.2"
+CLUSTER_DNS_SVC_IP: "10.1.0.2"
 
 #设置Node Port的端口范围
 NODE_PORT_RANGE: "20000-40000"
 
 #设置POD的IP地址段
-POD_CIDR: "10.244.0.0/16"
+POD_CIDR: "10.2.0.0/16"
 
 #设置集群的DNS域名
 CLUSTER_DNS_DOMAIN: "cluster.local."
 
-#设置Master的VIP地址(必须修改)
-MASTER_VIP: "172.16.18.212"
+#设置Docker Registry地址
+#DOCKER_REGISTRY: "https://192.168.150.135:5000"
 
-#设置网卡名称(必须修改)
-VIP_IF: "ens160"
+#设置Master的VIP地址(必须修改)
+MASTER_VIP: "192.168.150.253"
+
+#设置网卡名称
+VIP_IF: "ens32"
+
 
 ```
 
@@ -259,53 +267,55 @@ VIP_IF: "ens160"
 5.2 部署Etcd，由于Etcd是基础组建，需要先部署，目标为部署etcd的节点。
 
 ```bash
-[root@k8s-m1 ~]# salt-ssh -L 'k8s-m1,k8s-m2,k8s-m3' state.sls k8s.etcd
+[root@linux-node1 ~]# salt-ssh -L 'linux-node1,linux-node2,linux-node3' state.sls k8s.etcd
 ```
 注：如果执行失败，新手建议推到重来，请检查各个节点的主机名解析是否正确（监听的IP地址依赖主机名解析）。
 
 5.3 部署K8S集群
 ```bash
-[root@k8s-m1 ~]# salt-ssh '*' state.highstate
+[root@linux-node1 ~]# salt-ssh '*' state.highstate
 ```
 由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！
 
 ## 6.测试Kubernetes安装
 ```
-[root@k8s-m1 ~]# source /etc/profile
-[root@k8s-m1 ~]# kubectl get cs
+[root@linux-node1 ~]# source /etc/profile
+[root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
-scheduler            Healthy   ok                  
 controller-manager   Healthy   ok                  
-etcd-0               Healthy   {"health":"true"}   
+scheduler            Healthy   ok                  
 etcd-2               Healthy   {"health":"true"}   
 etcd-1               Healthy   {"health":"true"}   
+etcd-0               Healthy   {"health":"true"}  
 [root@k8s-m1 ~]# kubectl get node
-k8s-m1   Ready    master   4d15h   v1.12.5
-k8s-m2   Ready    master   4d15h   v1.12.5
-k8s-m3   Ready    master   4d15h   v1.12.5
-k8s-n1   Ready    node     4d15h   v1.12.5
+NAME          STATUS   ROLES    AGE   VERSION
+linux-node1   Ready    master   14m   v1.12.5
+linux-node2   Ready    master   24m   v1.12.5
+linux-node3   Ready    master   24m   v1.12.5
+linux-node4   Ready    node     30m   v1.12.5
 ```
 ## 7.测试Kubernetes集群和Flannel网络
 
 ```
-[root@k8s-m1 ~]# kubectl run net-test --image=alpine --replicas=2 sleep 360000
+[root@linux-node1 ~]# kubectl run net-test --image=alpine --replicas=2 sleep 360000
 deployment "net-test" created
 需要等待拉取镜像，可能稍有的慢，请等待。
-[root@k8s-m1 ~]# kubectl get pod -o wide
-NAME                        READY     STATUS    RESTARTS   AGE       IP          NODE
-net-test-5767cb94df-n9lvk   1/1       Running   0          14s       10.244.91.2   k8s-m1
-net-test-5767cb94df-zclc5   1/1       Running   0          14s       10.244.92.4   k8s-n1
+[root@linux-node1 ~]# kubectl get pod -o wide
+NAME                        READY   STATUS    RESTARTS   AGE   IP          NODE          NOMINATED NODE
+net-test-5786f8b986-7rbf7   1/1     Running   0          17s   10.2.69.2   linux-node4   <none>
+net-test-5786f8b986-fp4xl   1/1     Running   0          16s   10.2.75.2   linux-node2   <none>
 
 测试联通性，如果都能ping通，说明Kubernetes集群部署完毕，有问题请QQ群交流。
-[root@k8s-m1 ~]# ping -c 1 10.244.92.4
-PING 10.244.92.4 (10.244.92.4) 56(84) bytes of data.
-64 bytes from 10.2.12.2: icmp_seq=1 ttl=61 time=8.72 ms
+[root@linux-node1 ~]# ping -c 1 10.2.69.2
+PING 10.2.69.2 (10.2.69.2) 56(84) bytes of data.
+64 bytes from 10.2.69.2: icmp_seq=1 ttl=61 time=2.02 ms
 
---- 10.244.92.4 ping statistics ---
+--- 10.2.69.2 ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 8.729/8.729/8.729/0.000 ms
+rtt min/avg/max/mdev = 2.028/2.028/2.028/0.000 ms
 
-确认服务能够执行 logs exec 等指令;kubectl logs -f net-test-5767cb94df-n9lvk,此时会出现如下报错:
+此步骤需要先安装coredns组件。
+确认服务能够执行 logs exec 等指令;kubectl logs -f net-test-5786f8b986-fp4xl,此时会出现如下报错:
 [root@k8s-m1 ~]# kubectl logs net-test-5767cb94df-n9lvk
 error: You must be logged in to the server (the server has asked for the client to provide credentials ( pods/log net-test-5767cb94df-n9lvk))
 
@@ -316,19 +326,20 @@ error: You must be logged in to the server (the server has asked for the client 
 ```
 ## 8.如何新增Kubernetes节点
 
-- 1.设置SSH无密码登录
+- 1.设置SSH无密码登录，并且在/etc/hosts中继续增加对应的解析。确保所有节点都能解析。
 - 2.在/etc/salt/roster里面，增加对应的机器。
 - 3.执行SaltStack状态salt-ssh '*' state.highstate。
-```
-[root@k8s-m1 ~]# vim /etc/salt/roster 
-k8s-n2:
-  host: 172.16.18.209
+
+```bash
+[root@linux-node5 ~]# vim /etc/salt/roster 
+linux-node5:
+  host: 192.168.150.145
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
     grains:
       k8s-role: node
-[root@linux-node1 ~]# salt-ssh 'k8s-n2' state.highstate
+[root@linux-node1 ~]# salt-ssh 'linux-node5' state.highstate
 ```
 
 ## 9.下一步要做什么？
