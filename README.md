@@ -29,30 +29,6 @@
 
   SaltStack自动化部署Kubernetes    https://github.com/unixhot/salt-kubernetes
 
-# 使用手册
-<table border="0">
-    <tr>
-        <td><strong>手动部署</strong></td>
-        <td><a href="docs/update-kernel.md">1.升级内核</a></td>
-        <td><a href="docs/ca.md">2.CA证书制作</a></td>
-        <td><a href="docs/etcd-install.md">3.ETCD集群部署</a></td>
-        <td><a href="docs/master.md">4.Master节点部署</a></td>
-        <td><a href="docs/node.md">5.Node节点部署</a></td>
-        <td><a href="docs/flannel.md">6.Flannel部署</a></td>
-        <td><a href="docs/app.md">7.应用创建</a></td>
-    </tr>
-    <tr>
-        <td><strong>必备插件</strong></td>
-        <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
-        <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
-        <td><a href="docs/heapster.md">3.Heapster部署</a></td>
-        <td><a href="docs/ingress.md">4.Ingress部署</a></td>
-        <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
-        <td><a href="docs/helm.md">6.Helm部署</a></td>
-    </tr>
-</table>
-
-
 ## 案例架构图
 
   ![架构图](https://skymyyang.github.io/img/k8s-ha.jpg)
@@ -357,67 +333,18 @@ linux-node5:
         <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
     </tr>
 </table>
-### 为Master节点打上污点，让POD尽可能的不要调度到Master节点上。
+
+为Master节点打上污点，让POD尽可能的不要调度到Master节点上。
 
 关于污点的说明大家可自行百度。
 
 ```bash
-kubectl describe node k8s-m1
-kubectl taint node k8s-m1 node-role.kubernetes.io/master=k8s-m1:PreferNoSchedule
-kubectl taint node k8s-m2 node-role.kubernetes.io/master=k8s-m2:PreferNoSchedule
-kubectl taint node k8s-m3 node-role.kubernetes.io/master=k8s-m3:PreferNoSchedule
-```
-## 10. 已知的BUG
-
-该BUG不影响svc内部之间的调用，但是会影响在节点上去访问对应的svc出现无法访问的情况。如果svc的后端pod在当前对应的节点上是可以进行访问的。
-
-BUG重现：
-1. 创建Nginx 测试的svc
-```bash
-[root@linux-node1 k8s]# kubectl apply -f /srv/addons/Test/nginx-test.yaml 
-[root@linux-node1 addons]# kubectl get svc
-NAME            TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
-kubernetes      ClusterIP   10.1.0.1       <none>        443/TCP   33m
-nginx-service   ClusterIP   10.1.221.156   <none>        80/TCP    4m54s
+kubectl describe node linux-node1
+kubectl taint node k8s-m1 node-role.kubernetes.io/master=linux-node1:PreferNoSchedule
+kubectl taint node k8s-m2 node-role.kubernetes.io/master=linux-node2:PreferNoSchedule
+kubectl taint node k8s-m3 node-role.kubernetes.io/master=linux-node3:PreferNoSchedule
 ```
 
-2. 查看nginx-svc对应的pod所在的节点,如下代码所示，我们可以看到nginx在Linux-node1节点上。
-
-```bash
-[root@linux-node1 addons]# kubectl get pod -o wide
-NAME                        READY   STATUS    RESTARTS   AGE     IP          NODE          NOMINATED NODE
-net-test-5786f8b986-ptkqn   1/1     Running   0          14m     10.2.42.2   linux-node1   <none>
-net-test-5786f8b986-z5q7g   1/1     Running   0          14m     10.2.26.2   linux-node2   <none>
-nginx                       1/1     Running   0          5m33s   10.2.42.3   linux-node1   <none>
-```
-3. 在node1节点上我们使用 `curl http://10.2.42.3` ,可以看到是有html页面代码返回的。而当我们在linux-node2节点上使用 `curl http://10.2.42.3` 没有结果页面返回且超时。
-
-4. 我们使用 `ipvsadm -Ln ` 是可以查看到后端服务器的。
-
-```bash
-[root@linux-node1 addons]# ipvsadm -Ln 
-IP Virtual Server version 1.2.1 (size=4096)
-Prot LocalAddress:Port Scheduler Flags
-  -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
-TCP  10.1.0.1:443 rr
-  -> 192.168.150.141:6443         Masq    1      0          0         
-  -> 192.168.150.142:6443         Masq    1      0          0         
-  -> 192.168.150.143:6443         Masq    1      0          0         
-TCP  10.1.0.2:53 rr
-  -> 10.2.25.2:53                 Masq    1      0          0         
-  -> 10.2.33.2:53                 Masq    1      0          0         
-TCP  10.1.221.156:80 rr
-  -> 10.2.42.3:80                 Masq    1      0          0         
-UDP  10.1.0.2:53 rr
-  -> 10.2.25.2:53                 Masq    1      0          0         
-  -> 10.2.33.2:53                 Masq    1      0          0
-```
-
-5. 以下链接是我提交的issue，不过到现在还没有解决这个bug，唯一的解决办法是把kube-proxy的模式由ipvs改为iptables。这里也希望大家能帮忙解决一下。
-
-```
-https://github.com/opsnull/follow-me-install-kubernetes-cluster/issues/386
-```
 
 
 # 手动部署
@@ -430,3 +357,25 @@ https://github.com/opsnull/follow-me-install-kubernetes-cluster/issues/386
 - [创建第一个K8S应用](docs/app.md)
 - [CoreDNS和Dashboard部署](docs/dashboard.md)
 
+# 使用手册-该手册没有经过修改，误用。
+<table border="0">
+    <tr>
+        <td><strong>手动部署</strong></td>
+        <td><a href="docs/update-kernel.md">1.升级内核</a></td>
+        <td><a href="docs/ca.md">2.CA证书制作</a></td>
+        <td><a href="docs/etcd-install.md">3.ETCD集群部署</a></td>
+        <td><a href="docs/master.md">4.Master节点部署</a></td>
+        <td><a href="docs/node.md">5.Node节点部署</a></td>
+        <td><a href="docs/flannel.md">6.Flannel部署</a></td>
+        <td><a href="docs/app.md">7.应用创建</a></td>
+    </tr>
+    <tr>
+        <td><strong>必备插件</strong></td>
+        <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
+        <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
+        <td><a href="docs/heapster.md">3.Heapster部署</a></td>
+        <td><a href="docs/ingress.md">4.Ingress部署</a></td>
+        <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
+        <td><a href="docs/helm.md">6.Helm部署</a></td>
+    </tr>
+</table>

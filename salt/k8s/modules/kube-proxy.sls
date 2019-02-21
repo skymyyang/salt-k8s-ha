@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # #******************************************
-# # Author:       Jason Zhao
-# # Email:        shundong.zhao@linuxhot.com
-# # Organization: http://www.devopsedu.com/
+# Author:       skymyyang
+# Email:        yang-li@live.cn
+# Organization: skymyyyang.github.io
 # # Description:  Kubernetes Proxy
 # #******************************************
 
@@ -64,7 +64,7 @@ kube-proxy-config-yaml:
     - defaults:
         NODE_IP: {{ pillar['NODE_IP'] }}
         HOST_NAME: {{ pillar['HOST_NAME'] }}
-        SERVICE_CIDR: {{ pillar['SERVICE_CIDR'] }}
+        POD_CIDR: {{ pillar['POD_CIDR'] }}
 
 
 kube-proxy-service:
