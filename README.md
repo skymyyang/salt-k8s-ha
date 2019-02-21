@@ -345,9 +345,38 @@ kubectl taint node k8s-m2 node-role.kubernetes.io/master=linux-node2:PreferNoSch
 kubectl taint node k8s-m3 node-role.kubernetes.io/master=linux-node3:PreferNoSchedule
 ```
 
+## 10.已知的错误。
+
+此错误暂未发现影响
+
+```bash
+[root@linux-node2 ~]# journalctl -u kube-proxy
+......
+Feb 21 12:02:22 linux-node2 kube-proxy[40633]: I0221 12:02:22.106696   40633 server_others.go:216] Tearing down inactive rules.
+Feb 21 12:02:22 linux-node2 kube-proxy[40633]: E0221 12:02:22.195324   40633 proxier.go:430] Failed to execute iptables-restore for nat: exit status 1 (iptables-restore: line 7 failed
+Feb 21 12:02:22 linux-node2 kube-proxy[40633]: )
+......
+```
+如果有洁癖的，忍受不了这种错误的，我们可以把kube-proxy按照daemonset的方式部署;按照这种方式部署的话要先停用二进制安装的kube-proxy。
+
+PS:这里配置不一样的话需要修改yaml文件。
+
+```bash
+[root@linux-node1 ~]# systemctl disable kube-proxy
+[root@linux-node1 ~]# systemctl stop kube-proxy
+[root@linux-node1 ~]# kubectl apply -f /srv/addons/kube-proxy/kube-proxy.yml
+[root@linux-node1 ~]# kubectl get pod -n kube-system
+NAME                      READY   STATUS    RESTARTS   AGE
+coredns-cd7f66fdc-fxvx6   1/1     Running   2          18h
+coredns-cd7f66fdc-ldjnh   1/1     Running   2          18h
+kube-proxy-czxj9          1/1     Running   2          16h
+kube-proxy-pjpt5          1/1     Running   2          16h
+kube-proxy-wpfrh          1/1     Running   2          16h
+kube-proxy-zgg6t          1/1     Running   2          16h
+```
 
 
-# 手动部署
+# 手动部署-老版本未验证
 - [系统内核升级](docs/update-kernel.md)
 - [CA证书制作](docs/ca.md)
 - [ETCD集群部署](docs/etcd-install.md)
