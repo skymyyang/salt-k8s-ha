@@ -1,4 +1,5 @@
 # SaltStack自动化部署HA-Kubernetes
+- 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：https://github.com/skymyyang/salt-k8s-ha
 - SaltStack自动化部署Kubernetes v1.12.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
 
 ## 版本明细：Release-v1.12.5
@@ -34,6 +35,7 @@
   ![架构图](https://skymyyang.github.io/img/k8s-ha.jpg)
 
 ## 0.系统初始化(必备)
+
 1. 设置主机名！！！
 ```
 [root@linux-node1 ~]# cat /etc/hostname 
@@ -47,8 +49,8 @@ linux-node3
 
 [root@linux-node4 ~]# cat /etc/hostname 
 linux-node4
-
 ```
+
 2. 设置/etc/hosts保证主机名能够解析
 
 ```bash
@@ -63,11 +65,11 @@ linux-node4
 
 3. 关闭SELinux和防火墙以及NetworkManager
 
-   ```bash
+```bash
    systemctl disable --now firewalld NetworkManager
    setenforce 0
    sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
-   ```
+```
 
 4. 升级内核并且优化内核参数
 
@@ -243,6 +245,15 @@ VIP_IF: "ens32"
 执行高级状态，会根据定义的角色再对应的机器部署对应的服务
 
 5.2 部署Etcd，由于Etcd是基础组建，需要先部署，目标为部署etcd的节点。
+
+增加etcd参数的优化。
+
+- `--auto-compaction-retention`
+由于ETCD数据存储多版本数据，随着写入的主键增加历史版本需要定时清理，默认的历史数据是不会清理的，数据达到2G就不能写入，必须要清理压缩历史数据才能继续写入;所以根据业务需求，在上生产环境之前就提前确定，历史数据多长时间压缩一次;推荐一小时压缩一次数据这样可以极大的保证集群稳定，减少内存和磁盘占用
+
+- `--max-request-bytes` etcd Raft消息最大字节数，ETCD默认该值为1.5M; 但是很多业务场景发现同步数据的时候1.5M完全没法满足要求，所以提前确定初始值很重要;由于1.5M导致我们线上的业务无法写入元数据的问题，我们紧急升级之后把该值修改为默认32M，但是官方推荐的是10M，大家可以根据业务情况自己调整 
+
+- `--quota-backend-bytes` ETCD db数据大小，默认是2G，当数据达到2G的时候就不允许写入，必须对历史数据进行压缩才能继续写入;参加1里面说的，我们启动的时候就应该提前确定大小，官方推荐是8G，这里我们也使用8G的配置
 
 ```bash
 [root@linux-node1 ~]# salt-ssh -L 'linux-node1,linux-node2,linux-node3' state.sls k8s.etcd

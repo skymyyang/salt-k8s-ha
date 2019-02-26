@@ -7,7 +7,7 @@ Type=simple
 WorkingDirectory=/var/lib/etcd
 EnvironmentFile=-/opt/kubernetes/cfg/etcd.conf
 # set GOMAXPROCS to number of processors
-ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) /opt/kubernetes/bin/etcd"
+ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) /opt/kubernetes/bin/etcd --auto-compaction-retention=1 --max-request-bytes=33554432 --quota-backend-bytes=8589934592"
 Type=notify
 
 [Install]
