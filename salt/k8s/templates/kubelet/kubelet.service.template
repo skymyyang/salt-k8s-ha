@@ -17,6 +17,7 @@ ExecStart=/opt/kubernetes/bin/kubelet \
   --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause-amd64:3.1 \
   --cert-dir=/opt/kubernetes/ssl \
   --hostname-override={{ HOST_NAME }} \
+  --allowed-unsafe-sysctls="net.*" \
   --fail-swap-on=false \
   --allow-privileged=true \
   --alsologtostderr=true \

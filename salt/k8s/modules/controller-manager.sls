@@ -62,6 +62,7 @@ kube-controller-manager-service:
     - template: jinja
     - defaults:
         SERVICE_CIDR: {{ pillar['SERVICE_CIDR'] }}
+        POD_CIDR: {{ pillar['POD_CIDR'] }}
   cmd.run:
     - name: systemctl daemon-reload
   service.running:

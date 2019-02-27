@@ -4,15 +4,15 @@ Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 
 [Service]
 ExecStart=/opt/kubernetes/bin/kube-controller-manager \
-  --port=10252 \
-  --secure-port=10257 \
-  --bind-address=0.0.0.0 \
+  --address=127.0.0.1 \
+  --allocate-node-cidrs=true \
+  --authentication-kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
+  --authorization-kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
   --kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
   --service-cluster-ip-range={{ SERVICE_CIDR }} \
-  --cluster-name=kubernetes \
+  --cluster-cidr={{ POD_CIDR }} \
   --cluster-signing-cert-file=/opt/kubernetes/ssl/ca.pem \
   --cluster-signing-key-file=/opt/kubernetes/ssl/ca-key.pem \
-  --experimental-cluster-signing-duration=8760h \
   --root-ca-file=/opt/kubernetes/ssl/ca.pem \
   --service-account-private-key-file=/opt/kubernetes/ssl/ca-key.pem \
   --leader-elect=true \
