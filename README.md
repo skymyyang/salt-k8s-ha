@@ -269,6 +269,14 @@ VIP_IF: "ens32"
 ## 6.测试Kubernetes安装
 ```
 [root@linux-node1 ~]# source /etc/profile
+[root@linux-node1 ~]# etcdctl --endpoints=https://192.168.150.141:2379 \
+  --ca-file=/opt/kubernetes/ssl/ca.pem \
+  --cert-file=/opt/kubernetes/ssl/etcd.pem \
+  --key-file=/opt/kubernetes/ssl/etcd-key.pem cluster-health
+[root@linux-node1 ~]# etcdctl --endpoints=https://192.168.150.141:2379 \
+  --ca-file=/opt/kubernetes/ssl/ca.pem \
+  --cert-file=/opt/kubernetes/ssl/etcd.pem \
+  --key-file=/opt/kubernetes/ssl/etcd-key.pem member list
 [root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
 controller-manager   Healthy   ok                  
@@ -387,7 +395,7 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 ```
 
 
-# 手动部署-老版本未验证
+# 手动部署-该手册没有经过修改，误用
 - [系统内核升级](docs/update-kernel.md)
 - [CA证书制作](docs/ca.md)
 - [ETCD集群部署](docs/etcd-install.md)

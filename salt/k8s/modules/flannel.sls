@@ -55,16 +55,16 @@ flannel-etcd:
         FLANNEL_ETCD_PREFIX: {{ pillar['FLANNEL_ETCD_PREFIX'] }}
   cmd.run:
     - name: /bin/bash /opt/kubernetes/bin/flannel-etcd.sh
-{# flannel-config:
-  file.managed:
-    - name: /opt/kubernetes/cfg/flannel
-    - source: salt://k8s/templates/flannel/flannel-config.template
-    - user: root
-    - group: root
-    - mode: 644
-    - template: jinja
-    - defaults:
-        ETCD_ENDPOINTS: {{ pillar['ETCD_ENDPOINTS'] }} #}
+#flannel-config:
+#  file.managed:
+#    - name: /opt/kubernetes/cfg/flannel
+#    - source: salt://k8s/templates/flannel/flannel-config.template
+#    - user: root
+#    - group: root
+#    - mode: 644
+#    - template: jinja
+#    - defaults:
+#        ETCD_ENDPOINTS: {{ pillar['ETCD_ENDPOINTS'] }}
 flannel-bin:
   file.managed:
     - name: /opt/kubernetes/bin/flanneld

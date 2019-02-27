@@ -26,11 +26,13 @@ ETCD_CLUSTER: "etcd-node1=https://192.168.150.141:2380,etcd-node2=https://192.16
 #通过Grains FQDN自动获取本机IP地址，请注意保证主机名解析到本机IP地址
 NODE_IP: {{ grains['fqdn_ip4'][0] }}
 HOST_NAME: {{ grains['fqdn'] }}
+
 #设置BOOTSTARP的TOKEN，可以自己生成
 BOOTSTRAP_TOKEN: "be8dad.da8a699a46edc482"
 TOKEN_ID: "be8dad"
 TOKEN_SECRET: "da8a699a46edc482"
 ENCRYPTION_KEY: "8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA="
+
 #配置Service IP地址段
 SERVICE_CIDR: "10.1.0.0/16"
 

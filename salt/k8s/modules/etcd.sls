@@ -37,7 +37,9 @@ ectd-csr-json:
     - mode: 644
     - template: jinja
     - defaults:
-        NODE_IP: {{ grains['fqdn_ip4'][0] }}
+        MASTER_IP_M1: {{ pillar['MASTER_IP_M1'] }}
+        MASTER_IP_M2: {{ pillar['MASTER_IP_M2'] }}
+        MASTER_IP_M3: {{ pillar['MASTER_IP_M3'] }}
 
 etcd-ssl:
   cmd.run:
