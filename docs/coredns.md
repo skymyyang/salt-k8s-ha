@@ -1,7 +1,7 @@
 # Kubernetes CoreDNS
 
 ## 创建CoreDNS
-```
+```bash
 [root@linux-node1 ~]# kubectl create -f /srv/addons/coredns/coredns.yaml 
 
 [root@linux-node1 ~]# kubectl get pod -n kube-system

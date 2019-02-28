@@ -309,7 +309,6 @@ nginx-54458cd494-8fj47   1/1     Running   0          111s   10.2.70.3   linux-n
 
 
 测试联通性
-
 [root@linux-node1 ~]# ping -c 1 10.2.70.3
 PING 10.2.69.2 (10.2.69.2) 56(84) bytes of data.
 64 bytes from 10.2.69.2: icmp_seq=1 ttl=61 time=2.02 ms

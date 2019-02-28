@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Configuration to deploy release version of the Dashboard UI compatible with
+# Kubernetes 1.8.
+#
+# Example usage: kubectl create -f <this_file>
+
 # ------------------- Dashboard Secret ------------------- #
 
 apiVersion: v1
@@ -109,7 +114,8 @@ spec:
     spec:
       containers:
       - name: kubernetes-dashboard
-        image: dotbalo/kubernetes-dashboard-amd64:v1.10.1
+        #image: k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.3
+        image: mirrorgooglecontainers/kubernetes-dashboard-amd64:v1.8.3
         ports:
         - containerPort: 8443
           protocol: TCP
@@ -146,12 +152,14 @@ spec:
 
 ---
 # ------------------- Dashboard Service ------------------- #
-#
+
 kind: Service
 apiVersion: v1
 metadata:
   labels:
     k8s-app: kubernetes-dashboard
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
   name: kubernetes-dashboard
   namespace: kube-system
 spec:
@@ -159,20 +167,7 @@ spec:
   ports:
     - port: 443
       targetPort: 8443
-      nodePort: 30000
+      nodePort: 30001
   selector:
     k8s-app: kubernetes-dashboard
-
-#kind: Service
-#apiVersion: v1
-#metadata:
-#  labels:
-#    k8s-app: kubernetes-dashboard
-#  name: kubernetes-dashboard
-#  namespace: kube-system
-#spec:
-#  ports:
-#    - port: 443
-#      targetPort: 8443
-#  selector:
-#    k8s-app: kubernetes-dashboard
+  type: NodePort
