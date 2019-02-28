@@ -268,6 +268,7 @@ VIP_IF: "ens32"
 
 ## 6.测试Kubernetes安装
 ```
+#先验证etcd
 [root@linux-node1 ~]# source /etc/profile
 [root@linux-node1 ~]# etcdctl --endpoints=https://192.168.150.141:2379 \
   --ca-file=/opt/kubernetes/ssl/ca.pem \
@@ -294,16 +295,22 @@ linux-node4   Ready    node     30m   v1.12.5
 ## 7.测试Kubernetes集群和Flannel网络
 
 ```
-[root@linux-node1 ~]# kubectl run net-test --image=alpine --replicas=2 sleep 360000
-deployment "net-test" created
+[root@linux-node1 ~]# kubectl create deployment nginx --image=nginx:alpine
+deployment.apps/nginx created
 需要等待拉取镜像，可能稍有的慢，请等待。
-[root@linux-node1 ~]# kubectl get pod -o wide
-NAME                        READY   STATUS    RESTARTS   AGE   IP          NODE          NOMINATED NODE
-net-test-5786f8b986-7rbf7   1/1     Running   0          17s   10.2.69.2   linux-node4   <none>
-net-test-5786f8b986-fp4xl   1/1     Running   0          16s   10.2.75.2   linux-node2   <none>
+[root@linux-node1 ~]# kubectl get pod
+NAME                     READY   STATUS    RESTARTS   AGE
+nginx-54458cd494-8fj47   1/1     Running   0          13s
 
-测试联通性，如果都能ping通，说明Kubernetes集群部署完毕，有问题请QQ群交流。
-[root@linux-node1 ~]# ping -c 1 10.2.69.2
+[root@linux-node1 ~]# kubectl get pod -o wide
+NAME                     READY   STATUS    RESTARTS   AGE    IP          NODE          NOMINATED NODE   READINESS GATES
+nginx-54458cd494-8fj47   1/1     Running   0          111s   10.2.70.3   linux-node1   <none>           <none>
+
+
+
+测试联通性
+
+[root@linux-node1 ~]# ping -c 1 10.2.70.3
 PING 10.2.69.2 (10.2.69.2) 56(84) bytes of data.
 64 bytes from 10.2.69.2: icmp_seq=1 ttl=61 time=2.02 ms
 
@@ -311,16 +318,27 @@ PING 10.2.69.2 (10.2.69.2) 56(84) bytes of data.
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
 rtt min/avg/max/mdev = 2.028/2.028/2.028/0.000 ms
 
-此步骤需要先安装coredns组件。
-确认服务能够执行 logs exec 等指令;kubectl logs -f net-test-5786f8b986-fp4xl,此时会出现如下报错:
-[root@k8s-m1 ~]# kubectl logs net-test-5767cb94df-n9lvk
-error: You must be logged in to the server (the server has asked for the client to provide credentials ( pods/log net-test-5767cb94df-n9lvk))
+[root@linux-node1 ~]# curl --head http://10.2.70.3
+HTTP/1.1 200 OK
+Server: nginx/1.15.8
+Date: Wed, 27 Feb 2019 09:52:48 GMT
+Content-Type: text/html
+Content-Length: 612
+Last-Modified: Thu, 31 Jan 2019 23:32:11 GMT
+Connection: keep-alive
+ETag: "5c53857b-264"
+Accept-Ranges: bytes
 
+测试扩容，将Nginx应用的Pod副本数量拓展到2个节点
+[root@linux-node1 ~]# kubectl scale deployment nginx --replicas=2
+deployment.extensions/nginx scaled
 
-由于上述权限问题，我们必需创建一个 apiserver-to-kubelet-rbac.yml 来定义权限，以供我们执行 logs、exec 等指令;
-[root@k8s-m1 ~]# kubectl apply -f /srv/addons/apiserver-to-kubelet-rbac.yml
-然后执行kubctl logs验证是否成功.
+[root@linux-node1 ~]# kubectl get pod
+NAME                     READY   STATUS    RESTARTS   AGE
+nginx-54458cd494-8fj47   1/1     Running   0          5m4s
+nginx-54458cd494-qzhpf   1/1     Running   0          17s
 ```
+
 ## 8.如何新增Kubernetes节点
 
 - 1.设置SSH无密码登录，并且在/etc/hosts中继续增加对应的解析。确保所有节点都能解析。
@@ -347,7 +365,7 @@ linux-node5:
         <td><strong>必备插件</strong></td>
         <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
-        <td><a href="docs/heapster.md">3.Heapster部署</a></td>
+        <td><a href="docs/metrics-server.md">3.Metrics Server</a></td>
         <td><a href="docs/ingress.md">4.Ingress部署</a></td>
         <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
     </tr>
@@ -395,7 +413,7 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 ```
 
 
-# 手动部署-该手册没有经过修改，误用
+# 适用于老版本的手动部署-该手册没有经过修改，误用
 - [系统内核升级](docs/update-kernel.md)
 - [CA证书制作](docs/ca.md)
 - [ETCD集群部署](docs/etcd-install.md)
@@ -405,7 +423,7 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 - [创建第一个K8S应用](docs/app.md)
 - [CoreDNS和Dashboard部署](docs/dashboard.md)
 
-# 使用手册-该手册没有经过修改，误用。
+# 适用于老版本的使用手册-该手册没有经过修改，误用。
 <table border="0">
     <tr>
         <td><strong>手动部署</strong></td>
