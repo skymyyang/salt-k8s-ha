@@ -38,16 +38,16 @@
 
 1. 设置主机名！！！
 ```
-[root@linux-node1 ~]# cat /etc/hostname 
+[root@linux-node1 ~]# cat /etc/hostname
 linux-node1
 
-[root@linux-node2 ~]# cat /etc/hostname 
+[root@linux-node2 ~]# cat /etc/hostname
 linux-node2
 
-[root@linux-node3 ~]# cat /etc/hostname 
+[root@linux-node3 ~]# cat /etc/hostname
 linux-node3
 
-[root@linux-node4 ~]# cat /etc/hostname 
+[root@linux-node4 ~]# cat /etc/hostname
 linux-node4
 ```
 
@@ -118,8 +118,8 @@ Kubernetes二进制文件下载地址： https://pan.baidu.com/s/1Ag2ocpVmkg-uEo
 
 ```bash
 [root@linux-node1 ~]# cd /srv/salt/k8s/
-[root@linux-node1 k8s]# unzip k8s-v1.12.5-auto.zip 
-[root@linux-node1 k8s]# rm -f k8s-v1.12.5-auto.zip 
+[root@linux-node1 k8s]# unzip k8s-v1.12.5-auto.zip
+[root@linux-node1 k8s]# rm -f k8s-v1.12.5-auto.zip
 [root@linux-node1 k8s]# ls -l files/
 total 0
 drwxr-xr-x 2 root root  94 Jan 18 19:19 cfssl-1.2
@@ -137,12 +137,12 @@ drwxr-xr-x 3 root root  17 Jan 18 19:19 k8s-v1.12.5
 - etcd-name: 如果对一台机器设置了etcd-role就必须设置etcd-name
 
 ```yaml
-[root@linux-node1 ~]# vim /etc/salt/roster 
+[root@linux-node1 ~]# vim /etc/salt/roster
 linux-node1:
   host: 192.168.150.141
   user: root
   priv: /root/.ssh/id_rsa
-  minion_opts: 
+  minion_opts:
     grains:
       k8s-role: master
       etcd-role: node
@@ -251,7 +251,7 @@ VIP_IF: "ens32"
 - `--auto-compaction-retention`
 由于ETCD数据存储多版本数据，随着写入的主键增加历史版本需要定时清理，默认的历史数据是不会清理的，数据达到2G就不能写入，必须要清理压缩历史数据才能继续写入;所以根据业务需求，在上生产环境之前就提前确定，历史数据多长时间压缩一次;推荐一小时压缩一次数据这样可以极大的保证集群稳定，减少内存和磁盘占用
 
-- `--max-request-bytes` etcd Raft消息最大字节数，ETCD默认该值为1.5M; 但是很多业务场景发现同步数据的时候1.5M完全没法满足要求，所以提前确定初始值很重要;由于1.5M导致我们线上的业务无法写入元数据的问题，我们紧急升级之后把该值修改为默认32M，但是官方推荐的是10M，大家可以根据业务情况自己调整 
+- `--max-request-bytes` etcd Raft消息最大字节数，ETCD默认该值为1.5M; 但是很多业务场景发现同步数据的时候1.5M完全没法满足要求，所以提前确定初始值很重要;由于1.5M导致我们线上的业务无法写入元数据的问题，我们紧急升级之后把该值修改为默认32M，但是官方推荐的是10M，大家可以根据业务情况自己调整
 
 - `--quota-backend-bytes` ETCD db数据大小，默认是2G，当数据达到2G的时候就不允许写入，必须对历史数据进行压缩才能继续写入;参加1里面说的，我们启动的时候就应该提前确定大小，官方推荐是8G，这里我们也使用8G的配置
 
@@ -345,7 +345,7 @@ nginx-54458cd494-qzhpf   1/1     Running   0          17s
 - 3.执行SaltStack状态salt-ssh '*' state.highstate。
 
 ```bash
-[root@linux-node5 ~]# vim /etc/salt/roster 
+[root@linux-node5 ~]# vim /etc/salt/roster
 linux-node5:
   host: 192.168.150.145
   user: root
@@ -410,6 +410,11 @@ kube-proxy-pjpt5          1/1     Running   2          16h
 kube-proxy-wpfrh          1/1     Running   2          16h
 kube-proxy-zgg6t          1/1     Running   2          16h
 ```
+#### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
+
+![微信支付](https://github.com/skymyyang/salt-k8s-ha/master/docs/weixin.png)
+
+![微信支付](https://github.com/skymyyang/salt-k8s-ha/master/docs/zfb.jpg)
 
 
 # 适用于老版本的手动部署-该手册没有经过修改，误用
@@ -421,6 +426,7 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 - [Flannel网络部署](docs/flannel.md)
 - [创建第一个K8S应用](docs/app.md)
 - [CoreDNS和Dashboard部署](docs/dashboard.md)
+
 
 # 适用于老版本的使用手册-该手册没有经过修改，误用。
 <table border="0">

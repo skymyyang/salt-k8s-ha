@@ -57,5 +57,5 @@ NAME          CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 linux-node1   128m         6%     884Mi           47%       
 linux-node2   133m         6%     1032Mi          55%       
 linux-node3   184m         9%     983Mi           52%       
-linux-node4   29m          2%     343Mi           39% 
+linux-node4   29m          2%     343Mi           39%
 ```
