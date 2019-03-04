@@ -412,9 +412,9 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 ```
 #### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
 
-![微信支付](https://skymyyang.github.io/img/weixin.png) {:width="100px" height="100px"}
+![微信支付](https://skymyyang.github.io/img/weixin.png){:width="100px" height="100px"}
 
-![微信支付](https://skymyyang.github.io/img/zfb.jpg) {:width="100px" height="100px"}
+![微信支付](https://skymyyang.github.io/img/zfb.jpg){:width="100px" height="100px"}
 
 
 # 适用于老版本的手动部署-该手册没有经过修改，误用
