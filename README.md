@@ -365,7 +365,7 @@ linux-node5:
         <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
         <td><a href="docs/metrics-server.md">3.Metrics Server</a></td>
-        <td><a href="docs/ingress.md">4.Ingress部署</a></td>
+        <td><a href="docs/ingress-nginx.md">4.Ingress部署</a></td>
         <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
     </tr>
 </table>
