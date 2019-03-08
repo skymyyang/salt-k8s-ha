@@ -1,5 +1,5 @@
 # SaltStack自动化部署HA-Kubernetes
-- 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：https://github.com/skymyyang/salt-k8s-ha
+- 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：`https://github.com/skymyyang/salt-k8s-ha`
 - SaltStack自动化部署Kubernetes v1.12.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
 
 ## 版本明细：Release-v1.12.5
@@ -26,9 +26,9 @@
 
 - 本教程的来源于以下教程而生成，在此特别感谢两位作者。
 
-  和我一步步部署 kubernetes 集群   https://github.com/opsnull/follow-me-install-kubernetes-cluster
+  和我一步步部署 kubernetes 集群   `https://github.com/opsnull/follow-me-install-kubernetes-cluster`
 
-  SaltStack自动化部署Kubernetes    https://github.com/unixhot/salt-kubernetes
+  SaltStack自动化部署Kubernetes    `https://github.com/unixhot/salt-kubernetes`
 
 ## 案例架构图
 
@@ -102,7 +102,7 @@ linux-node4
 [root@linux-node1 ~]# yum install -y salt-ssh git unzip
 ```
 
-2.2 获取本项目代码，并放置在/srv目录
+2.2 获取本项目代码，并放置在 `/srv` 目录
 
 ```bash
 [root@linux-node1 ~]# git clone https://github.com/skymyyang/salt-k8s-ha.git
@@ -113,8 +113,8 @@ linux-node4
 ```
 
 2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载k8s-v1.12.5-auto.zip。
-下载完成后，将文件移动到/srv/salt/k8s/目录下，并解压
-Kubernetes二进制文件下载地址： https://pan.baidu.com/s/1Ag2ocpVmkg-uEoV13A7HFw
+下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压
+Kubernetes二进制文件下载地址： `https://pan.baidu.com/s/1Ag2ocpVmkg-uEoV13A7HFw`
 
 ```bash
 [root@linux-node1 ~]# cd /srv/salt/k8s/
@@ -340,11 +340,11 @@ nginx-54458cd494-qzhpf   1/1     Running   0          17s
 
 ## 8.如何新增Kubernetes节点
 
-- 1.设置SSH无密码登录，并且在/etc/hosts中继续增加对应的解析。确保所有节点都能解析。
-- 2.在/etc/salt/roster里面，增加对应的机器。
-- 3.执行SaltStack状态salt-ssh '*' state.highstate。
+- 1.设置SSH无密码登录，并且在 `/etc/hosts` 中继续增加对应的解析。确保所有节点都能解析。
+- 2.在 `/etc/salt/roster` 里面，增加对应的机器。
+- 3.执行SaltStack状态 `salt-ssh '*' state.highstate`
 
-```bash
+```Bash
 [root@linux-node5 ~]# vim /etc/salt/roster
 linux-node5:
   host: 192.168.150.145
@@ -365,7 +365,7 @@ linux-node5:
         <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
         <td><a href="docs/metrics-server.md">3.Metrics Server</a></td>
-        <td><a href="docs/ingress-nginx.md">4.Ingress部署</a></td>
+        <td><a href="docs/ingress-nginx.md">4.Ingress-nginx部署</a></td>
         <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
     </tr>
 </table>
