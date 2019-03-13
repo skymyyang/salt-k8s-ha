@@ -1,6 +1,7 @@
 # SaltStack自动化部署HA-Kubernetes
 - 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：`https://github.com/skymyyang/salt-k8s-ha`
 - SaltStack自动化部署Kubernetes v1.12.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
+- 该项目也兼容kubernetes v1.13.3版本，亲测可用。只需将原版本目录中 `/srv/salt/k8s/files/k8s-v1.12.5/bin` 的bin目录下的二进制文件替换为新版本即可；其他无需更改。
 
 ## 版本明细：Release-v1.12.5
 - 测试通过系统：CentOS 7.6
@@ -37,7 +38,8 @@
 ## 0.系统初始化(必备)
 
 1. 设置主机名！！！
-```
+
+```bash
 [root@linux-node1 ~]# cat /etc/hostname
 linux-node1
 
@@ -113,7 +115,7 @@ linux-node4
 ```
 
 2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载k8s-v1.12.5-auto.zip。
-下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压
+下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压，注意是 `files` 目录在 `/srv/salt/k8s/`目录下。
 Kubernetes二进制文件下载地址： `https://pan.baidu.com/s/1Ag2ocpVmkg-uEoV13A7HFw`
 
 ```bash
@@ -366,7 +368,8 @@ linux-node5:
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
         <td><a href="docs/metrics-server.md">3.Metrics Server</a></td>
         <td><a href="docs/ingress-nginx.md">4.Ingress-nginx部署</a></td>
-        <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
+        <td><a href="docs/ingress.md">5.Ingress扩展</a></td>
+        <td><a href="">6.敬请期待...</a></td>
     </tr>
 </table>
 
@@ -415,38 +418,3 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 ![支付宝支付](https://skymyyang.github.io/img/zfb3.png)
 
 ![微信支付](https://skymyyang.github.io/img/wx1.png)
-
-
-# 适用于老版本的手动部署-该手册没有经过修改，误用
-- [系统内核升级](docs/update-kernel.md)
-- [CA证书制作](docs/ca.md)
-- [ETCD集群部署](docs/etcd-install.md)
-- [Master节点部署](docs/master.md)
-- [Node节点部署](docs/node.md)
-- [Flannel网络部署](docs/flannel.md)
-- [创建第一个K8S应用](docs/app.md)
-- [CoreDNS和Dashboard部署](docs/dashboard.md)
-
-
-# 适用于老版本的使用手册-该手册没有经过修改，误用。
-<table border="0">
-    <tr>
-        <td><strong>手动部署</strong></td>
-        <td><a href="docs/update-kernel.md">1.升级内核</a></td>
-        <td><a href="docs/ca.md">2.CA证书制作</a></td>
-        <td><a href="docs/etcd-install.md">3.ETCD集群部署</a></td>
-        <td><a href="docs/master.md">4.Master节点部署</a></td>
-        <td><a href="docs/node.md">5.Node节点部署</a></td>
-        <td><a href="docs/flannel.md">6.Flannel部署</a></td>
-        <td><a href="docs/app.md">7.应用创建</a></td>
-    </tr>
-    <tr>
-        <td><strong>必备插件</strong></td>
-        <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
-        <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
-        <td><a href="docs/heapster.md">3.Heapster部署</a></td>
-        <td><a href="docs/ingress.md">4.Ingress部署</a></td>
-        <td><a href="https://github.com/unixhot/devops-x">5.CI/CD</a></td>
-        <td><a href="docs/helm.md">6.Helm部署</a></td>
-    </tr>
-</table>
