@@ -369,7 +369,7 @@ linux-node5:
         <td><a href="docs/metrics-server.md">3.Metrics Server</a></td>
         <td><a href="docs/ingress-nginx.md">4.Ingress-nginx部署</a></td>
         <td><a href="docs/ingress.md">5.Ingress扩展</a></td>
-        <td><a href="">6.敬请期待...</a></td>
+        <td><a href="">6.MetalLB</a></td>
     </tr>
 </table>
 
