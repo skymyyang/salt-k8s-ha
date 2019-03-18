@@ -6,8 +6,7 @@
 # Description:  Kubernetes Master
 #******************************************
 include:
-  - k8s.modules.haproxy
-  - k8s.modules.keepalived
+  - k8s.modules.nginx
   - k8s.modules.ca-file
   - k8s.modules.cfssl
   - k8s.modules.kubectl
