@@ -6,6 +6,14 @@
 # Description:  Base Env
 #******************************************
 
+systemd-journald-log:
+  file.directory:
+    - name: /var/log/journal
+
+journald-conf:
+  file.directory:
+    - name: /etc/systemd/journald.conf.d
+
 kubernetes-dir:
   file.directory:
     - name: /opt/kubernetes
@@ -72,3 +80,14 @@ sysctl-k8s-conf:
     - template: jinja
   cmd.run:
     - name: /usr/sbin/sysctl --system
+
+99-prophet.conf:
+  file.managed:
+    - name: /etc/systemd/journald.conf.d/99-prophet.conf
+    - source: salt://k8s/templates/baseos/99-prophet.conf.template
+    - user: root
+    - group: root
+    - mode: 644
+    - template: jinja
+  cmd.run:
+    - name: /usr/bin/systemctl restart systemd-journald
