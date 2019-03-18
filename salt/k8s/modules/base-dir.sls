@@ -54,7 +54,6 @@ init-pkg:
       - ipvsadm
       - ipset
       - sysstat
-      - conntrack
       - libseccomp
       - conntrack-tools
 

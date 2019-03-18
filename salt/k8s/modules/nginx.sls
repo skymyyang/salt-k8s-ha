@@ -14,8 +14,8 @@ nginx-install:
       - nginx
 nginx-config:
   file.managed:
-    - name: /etc/nginx/nginx.conf
-    - source: salt://k8s/templates/nginx/nginx.conf.template
+    - name: /etc/nginx/conf.d/kube-nginx.conf
+    - source: salt://k8s/templates/nginx/kube-nginx.conf.template
     - user: root
     - group: root
     - mode: 644

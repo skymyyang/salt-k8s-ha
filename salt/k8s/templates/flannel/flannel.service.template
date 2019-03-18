@@ -12,7 +12,7 @@ ExecStart=/opt/kubernetes/bin/flanneld \
   -etcd-certfile=/opt/kubernetes/ssl/flanneld.pem \
   -etcd-keyfile=/opt/kubernetes/ssl/flanneld-key.pem \
   -etcd-endpoints={{ ETCD_ENDPOINTS }} \
-  -etcd-prefix={{ FLANNEL_ETCD_PREFIX }}
+  -etcd-prefix={{ FLANNEL_ETCD_PREFIX }} \
   -iface={{ VIP_IF }} \
   -ip-masq
 ExecStartPost=/opt/kubernetes/bin/mk-docker-opts.sh -k DOCKER_NETWORK_OPTIONS -d /run/flannel/docker
