@@ -1,5 +1,5 @@
 worker_processes auto;
-user nginx;
+
 events {
     worker_connections  10240;
     use epoll;

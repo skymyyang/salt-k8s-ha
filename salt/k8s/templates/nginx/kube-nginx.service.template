@@ -1,0 +1,19 @@
+[Unit]
+Description=kube-apiserver nginx proxy
+After=network.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+ExecStartPre=/opt/kubernetes/kube-nginx/sbin/nginx -c /opt/kubernetes/kube-nginx/conf/kube-nginx.conf -p /opt/kubernetes/kube-nginx -t
+ExecStart=/opt/kubernetes/kube-nginx/sbin/nginx -c /opt/kubernetes/kube-nginx/conf/kube-nginx.conf -p /opt/kubernetes/kube-nginx
+ExecReload=/opt/kubernetes/kube-nginx/sbin/nginx -c /opt/kubernetes/kube-nginx/conf/kube-nginx.conf -p /opt/kubernetes/kube-nginx -s reload
+PrivateTmp=true
+Restart=always
+RestartSec=5
+StartLimitInterval=0
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

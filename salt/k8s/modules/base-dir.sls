@@ -18,6 +18,9 @@ kubernetes-dir:
   file.directory:
     - name: /opt/kubernetes
 
+nginx-dir:
+  - name: /opt/kubernetes/kube-nginx
+
 kubernetes-bin:
   file.directory:
     - name: /opt/kubernetes/bin
