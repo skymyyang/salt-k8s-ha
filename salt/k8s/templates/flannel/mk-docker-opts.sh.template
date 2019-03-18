@@ -30,7 +30,7 @@ OPTIONS:
     -c  Output combined Docker options into DOCKER_OPTS var
     -k  Set the combined options key to this value (default DOCKER_OPTS=)
     -m  Do not output --ip-masq (useful for older Docker version)
-" >/dev/stderr 
+" >/dev/stderr
   exit 1
 }
 
@@ -105,4 +105,3 @@ done
 if [[ "$combined_opts" = true ]]; then
   echo "${combined_opts_key}=\"${docker_opts}\"" >>$docker_env
 fi
-

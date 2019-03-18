@@ -2,7 +2,7 @@
 #******************************************
 # Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # Description:  Base Env
 #******************************************
 
@@ -41,3 +41,34 @@ init-pkg:
     - names:
       - nfs-utils
       - socat
+      - jq
+      - psmisc
+      - ipvsadm
+      - ipset
+      - sysstat
+      - conntrack
+      - libseccomp
+      - conntrack-tools
+
+ipvs-modules-set:
+  file.managed:
+    - name: /etc/modules-load.d/ipvs.conf
+    - source: salt://k8s/templates/kube-proxy/ipvs.conf.template
+    - user: root
+    - group: root
+    - mode: 644
+    - template: jinja
+  cmd.run:
+    - name: /usr/bin/systemctl enable --now systemd-modules-load.service
+
+
+sysctl-k8s-conf:
+  file.managed:
+    - name: /etc/sysctl.d/k8s.conf
+    - source: salt://k8s/templates/docker/k8s.conf.template
+    - user: root
+    - group: root
+    - mode: 644
+    - template: jinja
+  cmd.run:
+    - name: /usr/sbin/sysctl --system

@@ -6,7 +6,6 @@
     "{{ MASTER_IP_M2 }}",
     "{{ MASTER_IP_M3 }}",
     "{{ CLUSTER_KUBERNETES_SVC_IP }}",
-    "{{ MASTER_VIP }}",
     "kubernetes",
     "kubernetes.default",
     "kubernetes.default.svc",
@@ -27,4 +26,3 @@
     }
   ]
 }
-

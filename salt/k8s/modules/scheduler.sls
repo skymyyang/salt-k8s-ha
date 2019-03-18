@@ -6,7 +6,7 @@
 # Description:  Kubernetes Scheduler
 #******************************************
 
-{% set k8s_version = "k8s-v1.12.5" %}
+{% set k8s_version = "k8s-v1.13.4" %}
 
 
 kube-scheduler-csr-json:
@@ -33,7 +33,7 @@ kube-scheduler-bin:
     - mode: 755
 kube-scheduler-cluster:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ pillar['MASTER_VIP'] }}:8443 --kubeconfig=kube-scheduler.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server={{ pillar['KUBE_APISERVER'] }} --kubeconfig=kube-scheduler.kubeconfig
 
 kubectl-scheduler-credentials:
   cmd.run:

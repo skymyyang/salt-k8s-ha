@@ -6,7 +6,7 @@
 # Description:  Kubernetes API Server
 #******************************************
 
-{% set k8s_version = "k8s-v1.12.5" %}
+{% set k8s_version = "k8s-v1.13.4" %}
 
 kube-api-server-csr-json:
   file.managed:
@@ -21,7 +21,6 @@ kube-api-server-csr-json:
         MASTER_IP_M2: {{ pillar['MASTER_IP_M2'] }}
         MASTER_IP_M3: {{ pillar['MASTER_IP_M3'] }}
         CLUSTER_KUBERNETES_SVC_IP: {{ pillar['CLUSTER_KUBERNETES_SVC_IP'] }}
-        MASTER_VIP: {{ pillar['MASTER_VIP'] }}
   cmd.run:
     - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes kubernetes-csr.json | /opt/kubernetes/bin/cfssljson -bare kubernetes
     - unless: test -f /opt/kubernetes/ssl/kubernetes.pem
@@ -76,7 +75,7 @@ kube-apiserver-service:
   cmd.run:
     - name: systemctl daemon-reload
   service.running:
-    - name: kube-apiserver 
+    - name: kube-apiserver
     - enable: True
     - watch:
       - file: kube-apiserver-service

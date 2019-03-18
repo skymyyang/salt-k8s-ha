@@ -15,6 +15,9 @@ MASTER_H1: "linux-node1"
 MASTER_H2: "linux-node2"
 MASTER_H3: "linux-node3"
 
+#KUBE-APISERVER的反向代理地址端口
+KUBE_APISERVER: "https://127.0.0.1:8443"
+
 #设置ETCD集群访问地址（必须修改）
 ETCD_ENDPOINTS: "https://192.168.150.141:2379,https://192.168.150.142:2379,https://192.168.150.143:2379"
 

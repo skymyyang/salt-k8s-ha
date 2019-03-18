@@ -10,7 +10,8 @@
 - Etcd:         v3.3.10
 - Docker:       docker-ce-18.06.0.ce-3.el7
 - Flannel：     v0.10.0
-- CNI-Plugins： v0.7.0
+- CNI-Plugins： v0.7.4
+
 建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。
 
 ## 架构介绍

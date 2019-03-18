@@ -1,0 +1,22 @@
+worker_processes auto;
+user nginx;
+events {
+    worker_connections  10240;
+    use epoll;
+}
+error_log /var/log/nginx_error.log info;
+stream {
+    upstream kube-servers {
+        hash $remote_addr consistent;
+        server {{ MASTER_IP_M1 }}:6443          max_fails=3 fail_timeout=30s;
+        server {{ MASTER_IP_M2 }}:6443         max_fails=3 fail_timeout=30s;
+        server {{ MASTER_IP_M3 }}:6443        max_fails=3 fail_timeout=30s;
+    }
+
+    server {
+        listen 127.0.0.1:8443;
+        proxy_connect_timeout 1s;
+        proxy_timeout 3s;
+        proxy_pass kube-servers;
+    }
+}

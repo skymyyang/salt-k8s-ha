@@ -5,7 +5,7 @@
 # Organization: skymyyyang.github.io
 # Description:  Kubernetes Controller Manager
 #********************************************
-{% set k8s_version = "k8s-v1.12.5" %}
+{% set k8s_version = "k8s-v1.13.4" %}
 
 
 
@@ -37,7 +37,7 @@ kube-controller-manager-bin:
 
 kube-controller-manager-cluster:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ pillar['MASTER_VIP'] }}:8443 --kubeconfig=kube-controller-manager.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server={{ pillar['KUBE_APISERVER'] }} --kubeconfig=kube-controller-manager.kubeconfig
 
 kubectl-controller-manager-credentials:
   cmd.run:
@@ -49,7 +49,7 @@ kubectl-controller-manager-context:
 
 kubectl-controller-manager-use:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig 
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig
 
 
 kube-controller-manager-service:

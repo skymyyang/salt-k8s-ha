@@ -2,11 +2,11 @@
 # #******************************************
 # Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # # Description:  Kubernetes Proxy
 # #******************************************
 
-{% set k8s_version = "k8s-v1.12.5" %}
+{% set k8s_version = "k8s-v1.13.4" %}
 
 include:
   - k8s.modules.cni
@@ -31,7 +31,7 @@ kube-proxy-pem:
 
 kubeproxy-set-cluster:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ pillar['MASTER_VIP'] }}:8443  --kubeconfig=kube-proxy.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server={{ pillar['KUBE_APISERVER'] }}  --kubeconfig=kube-proxy.kubeconfig
 
 kubeproxy-set-credentials:
   cmd.run:
@@ -77,11 +77,6 @@ kube-proxy-service:
     - template: jinja
   cmd.run:
     - name: systemctl daemon-reload
-  pkg.installed:
-    - names:
-      - ipvsadm
-      - ipset 
-      - conntrack-tools
   service.running:
     - name: kube-proxy
     - enable: True

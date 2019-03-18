@@ -6,7 +6,7 @@
 # Description:  Kubernetes kubectl
 #******************************************
 
-{% set k8s_version = "k8s-v1.12.5" %}
+{% set k8s_version = "k8s-v1.13.4" %}
 
 kubectl-admin-csr:
   file.managed:
@@ -29,7 +29,7 @@ kubectl-bin:
 
 kubectl-admin-cluster:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ pillar['MASTER_VIP'] }}:8443 --kubeconfig=kubectl.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server={{ pillar['KUBE_APISERVER'] }} --kubeconfig=kubectl.kubeconfig
 
 kubectl-admin-credentials:
   cmd.run:
@@ -42,4 +42,3 @@ kubectl-admin-context:
 kubectl-admin-use:
   cmd.run:
     - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context kubernetes --kubeconfig=kubectl.kubeconfig && mkdir -p ~/.kube && /bin/cp /opt/kubernetes/cfg/kubectl.kubeconfig ~/.kube/config
-
