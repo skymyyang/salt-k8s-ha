@@ -37,7 +37,7 @@ spec:
             memory: 20Mi
 ---
 apiVersion: extensions/v1beta1
-kind: Daemonset
+kind: DaemonSet
 metadata:
   name: nginx-ingress-controller
   namespace: ingress-nginx
