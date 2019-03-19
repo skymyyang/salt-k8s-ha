@@ -4,14 +4,14 @@ Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 
 [Service]
 ExecStart=/opt/kubernetes/bin/kube-scheduler \
+  --leader-elect=true \
   --address=127.0.0.1 \
-  --config=/opt/kubernetes/cfg/kube-scheduler.yaml \
-  --kube-api-qps=100 \
+  --kubeconfig=/opt/kubernetes/cfg/kube-scheduler.kubeconfig \
   --logtostderr=true \
   --v=2
-  Restart=always
-  RestartSec=5
-  StartLimitInterval=0
+Restart=always
+RestartSec=5
+StartLimitInterval=0
 
 [Install]
 WantedBy=multi-user.target
