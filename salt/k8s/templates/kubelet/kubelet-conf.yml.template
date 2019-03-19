@@ -21,6 +21,7 @@ cgroupsPerQOS: true
 clusterDNS:
 - {{ CLUSTER_DNS_SVC_IP }}
 clusterDomain: {{ CLUSTER_DNS_DOMAIN }}
+podCIDR: {{ POD_CIDR }}
 containerLogMaxFiles: 5
 containerLogMaxSize: 10Mi
 contentType: application/vnd.kubernetes.protobuf

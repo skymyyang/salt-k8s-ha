@@ -52,6 +52,7 @@ kubelet-config-yaml:
     - defaults:
         CLUSTER_DNS_SVC_IP: {{ pillar['CLUSTER_DNS_SVC_IP'] }}
         CLUSTER_DNS_DOMAIN: {{ pillar['CLUSTER_DNS_DOMAIN'] }}
+        POD_CIDR: {{ pillar['POD_CIDR'] }}
 kubelet-service:
   file.managed:
     - name: /usr/lib/systemd/system/kubelet.service
@@ -70,7 +71,7 @@ kubelet-service:
     - ROLES: "node"
     {% endif %}
     - defaults:
-        HOST_NAME: {{ pillar['HOST_NAME'] }}
+        HOST_NAME: {{ grains['fqdn'] }}
 
   cmd.run:
     - name: systemctl daemon-reload

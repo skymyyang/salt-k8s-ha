@@ -47,6 +47,15 @@ kubectl-scheduler-use:
   cmd.run:
     - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig
 
+kube-scheduler-yaml:
+  file.managed:
+    - name: /opt/kubernetes/cfg/kube-scheduler.yaml
+    - source: salt://k8s/templates/kube-scheduler/kube-scheduler.yaml.template
+    - user: root
+    - group: root
+    - mode: 644
+    - template: jinja
+
 kube-scheduler-service:
   file.managed:
     - name: /usr/lib/systemd/system/kube-scheduler.service

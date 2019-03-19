@@ -19,7 +19,8 @@ kubernetes-dir:
     - name: /opt/kubernetes
 
 nginx-dir:
-  - name: /opt/kubernetes/kube-nginx
+  file.directory:
+    - name: /opt/kubernetes/kube-nginx
 
 kubernetes-bin:
   file.directory:
@@ -59,6 +60,7 @@ init-pkg:
       - sysstat
       - libseccomp
       - conntrack-tools
+      - net-tools
 
 ipvs-modules-set:
   file.managed:

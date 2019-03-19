@@ -16,7 +16,7 @@ stream {
     server {
         listen 127.0.0.1:8443;
         proxy_connect_timeout 1s;
-        proxy_timeout 3s;
+        proxy_timeout 30s;
         proxy_pass kube-servers;
     }
 }
