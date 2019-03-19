@@ -42,7 +42,7 @@ NAME                              READY   STATUS    RESTARTS   AGE
 metrics-server-79b544fd7b-tkh8m   1/1     Running   0          14h
 ```
 
-##收集 Metrics,执行 kubectl top 指令查看
+## 收集 Metrics,执行 kubectl top 指令查看
 
 ```bash
 [root@linux-node1 ~]# kubectl get --raw /apis/metrics.k8s.io/v1beta1

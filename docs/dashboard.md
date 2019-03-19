@@ -1,9 +1,9 @@
 # Kubernetes Dashboard
 
 ## 创建Dashboard
- 
+
   需要CoreDNS部署成功之后再安装Dashboard。
-  
+
 ```bash
 [root@linux-node1 ~]# kubectl create -f /srv/addons/dashboard/
 serviceaccount/admin-user created
@@ -18,7 +18,7 @@ service/kubernetes-dashboard created
 
 ## 访问Dashboard
 
-    https://192.168.150.253:30000
+    https://192.168.150.141:30000
 
 用户名:admin  密码：admin 选择Token令牌模式登录。
 

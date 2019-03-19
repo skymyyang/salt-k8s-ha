@@ -14,7 +14,14 @@
 - CNI-Plugins： v0.7.4
 - nginx:        v1.15.3
 
-建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。
+建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。以下是最小配置，否则可能不成功。
+
+IP地址 | Hostname | 最小配置 | Kernel Version
+---|--- | --- | --- |
+192.168.150.141 | linux-node1 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.150.142 | linux-node2 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.150.143 | linux-node3 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.150.144 | linux-node4 | Centos7.6 1G 1CPU | 4.18.16-1.el7.elrepo.x86_64
 
 ## 架构介绍
 1. 使用Salt Grains进行角色定义，增加灵活性。
@@ -297,12 +304,12 @@ scheduler            Healthy   ok
 etcd-2               Healthy   {"health":"true"}   
 etcd-1               Healthy   {"health":"true"}   
 etcd-0               Healthy   {"health":"true"}  
-[root@k8s-m1 ~]# kubectl get node
-NAME          STATUS   ROLES    AGE   VERSION
-linux-node1   Ready    master   14m   v1.12.5
-linux-node2   Ready    master   24m   v1.12.5
-linux-node3   Ready    master   24m   v1.12.5
-linux-node4   Ready    node     30m   v1.12.5
+[root@linux-node1 ~]# kubectl get node
+NAME          STATUS   ROLES    AGE     VERSION
+linux-node1   Ready    master   3h12m   v1.13.4
+linux-node2   Ready    master   3h12m   v1.13.4
+linux-node3   Ready    master   3h13m   v1.13.4
+linux-node4   Ready    node     3h14m   v1.13.4
 ```
 ## 7.测试Kubernetes集群和Flannel网络
 
@@ -310,44 +317,39 @@ linux-node4   Ready    node     30m   v1.12.5
 [root@linux-node1 ~]# kubectl create deployment nginx --image=nginx:alpine
 deployment.apps/nginx created
 需要等待拉取镜像，可能稍有的慢，请等待。
-[root@linux-node1 ~]# kubectl get pod
-NAME                     READY   STATUS    RESTARTS   AGE
-nginx-54458cd494-8fj47   1/1     Running   0          13s
-
 [root@linux-node1 ~]# kubectl get pod -o wide
-NAME                     READY   STATUS    RESTARTS   AGE    IP          NODE          NOMINATED NODE   READINESS GATES
-nginx-54458cd494-8fj47   1/1     Running   0          111s   10.2.70.3   linux-node1   <none>           <none>
+NAME                     READY   STATUS    RESTARTS   AGE   IP         NODE          NOMINATED NODE   READINESS GATES
+nginx-54458cd494-zp9zp   1/1     Running   0          69s   10.2.1.2   linux-node3   <none>           <none>
 
 
 
 测试联通性
-[root@linux-node1 ~]# ping -c 1 10.2.70.3
-PING 10.2.69.2 (10.2.69.2) 56(84) bytes of data.
-64 bytes from 10.2.69.2: icmp_seq=1 ttl=61 time=2.02 ms
+[root@linux-node1 ~]# ping -c 1 10.2.1.2
+PING 10.2.1.2 (10.2.1.2) 56(84) bytes of data.
+64 bytes from 10.2.1.2: icmp_seq=1 ttl=61 time=0.729 ms
 
---- 10.2.69.2 ping statistics ---
+--- 10.2.1.2 ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 2.028/2.028/2.028/0.000 ms
+rtt min/avg/max/mdev = 0.729/0.729/0.729/0.000 ms
 
-[root@linux-node1 ~]# curl --head http://10.2.70.3
+[root@linux-node1 ~]# curl --head http://10.2.1.2
 HTTP/1.1 200 OK
-Server: nginx/1.15.8
-Date: Wed, 27 Feb 2019 09:52:48 GMT
+Server: nginx/1.15.9
+Date: Tue, 19 Mar 2019 05:36:47 GMT
 Content-Type: text/html
 Content-Length: 612
-Last-Modified: Thu, 31 Jan 2019 23:32:11 GMT
+Last-Modified: Fri, 08 Mar 2019 03:05:13 GMT
 Connection: keep-alive
-ETag: "5c53857b-264"
+ETag: "5c81dbe9-264"
 Accept-Ranges: bytes
 
 测试扩容，将Nginx应用的Pod副本数量拓展到2个节点
 [root@linux-node1 ~]# kubectl scale deployment nginx --replicas=2
 deployment.extensions/nginx scaled
-
 [root@linux-node1 ~]# kubectl get pod
 NAME                     READY   STATUS    RESTARTS   AGE
-nginx-54458cd494-8fj47   1/1     Running   0          5m4s
-nginx-54458cd494-qzhpf   1/1     Running   0          17s
+nginx-54458cd494-nf946   1/1     Running   0          13s
+nginx-54458cd494-zp9zp   1/1     Running   0          3m57s
 ```
 
 ## 8.如何新增Kubernetes节点
@@ -376,10 +378,11 @@ linux-node5:
         <td><strong>必备插件</strong></td>
         <td><a href="docs/coredns.md">1.CoreDNS部署</a></td>
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
-        <td><a href="docs/metrics-server.md">3.Metrics Server</a></td>
-        <td><a href="docs/ingress-nginx.md">4.Ingress-nginx部署</a></td>
-        <td><a href="docs/ingress.md">5.Ingress扩展</a></td>
-        <td><a href="docs/metallb.md">6.MetalLB</a></td>
+        <td><a href="docs/heapster.md">3.heapster部署</a></td>
+        <td><a href="docs/metrics-server.md">4.Metrics Server</a></td>
+        <td><a href="docs/ingress-nginx.md">5.Ingress-nginx部署</a></td>
+        <td><a href="docs/ingress.md">6.Ingress扩展</a></td>
+        <td><a href="docs/metallb.md">7.MetalLB</a></td>
     </tr>
 </table>
 
