@@ -111,3 +111,8 @@ apiserver-to-kubelet-rbac:
     - template: jinja
   cmd.run:
     - name: /opt/kubernetes/bin/kubectl delete -f /opt/kubernetes/cfg/apiserver-to-kubelet-rbac.yaml;/opt/kubernetes/bin/kubectl create -f /opt/kubernetes/cfg/apiserver-to-kubelet-rbac.yaml
+
+#--authentication-kubeconfig 和 --authorization-kubeconfig 参数指定的证书需要有创建 "subjectaccessreviews" 的权限
+kube-controller-manager-clusterrole:
+  cmd.run:
+    - name: /opt/kubernetes/bin/kubectl create clusterrolebinding controller-manager:system:auth-delegator --user system:kube-controller-manager --clusterrole system:auth-delegator
