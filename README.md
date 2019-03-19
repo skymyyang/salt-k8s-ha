@@ -11,7 +11,14 @@
 - Docker:       docker-ce-18.06.0.ce-3.el7
 - Flannel：     v0.10.0
 - CNI-Plugins： v0.7.0
-建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。
+建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。以下是最小配置，否则可能不成功。
+
+IP地址 | Hostname | 最小配置 | Kernel Version
+---|--- | --- | --- |
+192.168.150.141 | linux-node1 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.150.142 | linux-node2 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.150.143 | linux-node3 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.150.144 | linux-node4 | Centos7.6 1G 1CPU | 4.18.16-1.el7.elrepo.x86_64
 
 ## 架构介绍
 1. 使用Salt Grains进行角色定义，增加灵活性。
