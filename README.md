@@ -376,6 +376,7 @@ linux-node5:
         <td><a href="docs/ingress-nginx.md">4.Ingress-nginx部署</a></td>
         <td><a href="docs/ingress.md">5.Ingress扩展</a></td>
         <td><a href="docs/metallb.md">6.MetalLB</a></td>
+        <td><a href="docs/helm.md">7.Helm部署</a></td>
     </tr>
 </table>
 
