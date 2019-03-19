@@ -380,6 +380,11 @@ linux-node5:
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
         <td><a href="docs/heapster.md">3.heapster部署</a></td>
         <td><a href="docs/metrics-server.md">4.Metrics Server</a></td>
+</table>
+
+<table border="0">
+    <tr>
+        <td><strong>必备插件-2</strong></td>
         <td><a href="docs/ingress-nginx.md">5.Ingress-nginx部署</a></td>
         <td><a href="docs/ingress.md">6.Ingress扩展</a></td>
         <td><a href="docs/metallb.md">7.MetalLB</a></td>
