@@ -1,16 +1,18 @@
 # SaltStack自动化部署HA-Kubernetes
 - 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：`https://github.com/skymyyang/salt-k8s-ha`
-- SaltStack自动化部署Kubernetes v1.12.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
-- 该项目也兼容kubernetes v1.13.3版本，亲测可用。只需将原版本目录中 `/srv/salt/k8s/files/k8s-v1.12.5/bin` 的bin目录下的二进制文件替换为新版本即可；其他无需更改。
+- SaltStack自动化部署Kubernetes v1.13.4版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
 
-## 版本明细：Release-v1.12.5
+
+## 版本明细：Release-v1.13.4
 - 测试通过系统：CentOS 7.6
-- salt-ssh:     salt-ssh 2018.3.3 (Oxygen)
-- Kubernetes：  v1.12.5
-- Etcd:         v3.3.10
-- Docker:       docker-ce-18.06.0.ce-3.el7
+- Kernel Version: 4.18.16-1.el7.elrepo.x86_64
+- salt-ssh:     salt-ssh 2019.2.0-1
+- Kubernetes：  v1.13.4
+- Etcd:         v3.3.12
+- Docker:       18.09.3
 - Flannel：     v0.10.0
 - CNI-Plugins： v0.7.4
+- nginx:        v1.15.3
 
 建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。
 
@@ -18,13 +20,15 @@
 1. 使用Salt Grains进行角色定义，增加灵活性。
 2. 使用Salt Pillar进行配置项管理，保证安全性。
 3. 使用Salt SSH执行状态，不需要安装Agent，保证通用性。
-4. 使用Kubernetes当前稳定版本v1.12.5，保证稳定性。
-5. 使用HaProxy和keepalived来保证集群的高可用。
+4. 使用Kubernetes当前稳定版本v1.13.4，保证稳定性。
+5. 使用nginx来保证集群的高可用。
+6. KeepAlive+VIP的形式完成高可用的缺点
+    - 受限于使用者的网络，无法适用于SDN网络，比如Aliyun的VPC
+    - 虽然是高可用的，但是流量还是单点的，所有node的的网络I/O都会高度集中于一台机器上（VIP)，一旦集群节点增多，pod增多，单机的网络I/O迟早是网络隐患。
+7. 本文的高可用可通用于任何云上的SDN环境和自建机房环境，列如阿里云的VPC环境中
 
 ## 技术交流QQ群（加群请备注来源于Github）：
 - Docker&Kubernetes：796163694
-
-- 关于本帖子上的手动部署，我还没有进行验证和修改，还只能适用于原作者的1.10.3版本；感兴趣的同学可以看一下两位作者的教程。
 
 - 本教程的来源于以下教程而生成，在此特别感谢两位作者。
 
@@ -34,7 +38,7 @@
 
 ## 案例架构图
 
-  ![架构图](https://skymyyang.github.io/img/k8s-ha.jpg)
+  ![架构图](https://skymyyang.github.io/img/k8s3.png)
 
 ## 0.系统初始化(必备)
 
@@ -74,13 +78,13 @@ linux-node4
    sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 ```
 
-4. 升级内核并且优化内核参数
+4. 升级内核
 
-   <table border="0">
+<table border="0">
        <tr>
            <td><a href="docs/update-kernel.md">升级内核</a></td>
        </tr>
-   </table>
+</table>
 
 5. 以上必备条件必须严格检查，否则，一定不会部署成功！
 
@@ -102,35 +106,36 @@ linux-node4
 ```bash
 [root@linux-node1 ~]# yum install -y https://mirrors.aliyun.com/saltstack/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
 [root@linux-node1 ~]# sed -i "s/repo.saltstack.com/mirrors.aliyun.com\/saltstack/g" /etc/yum.repos.d/salt-latest.repo
-[root@linux-node1 ~]# yum install -y salt-ssh git unzip
+[root@linux-node1 ~]# yum install -y salt-ssh git unzip p7zip
 ```
 
-2.2 获取本项目代码，并放置在 `/srv` 目录
+2.2 获取本项目 `1.13-Release` 分支代码，并放置在 `/srv` 目录
 
 ```bash
-[root@linux-node1 ~]# git clone https://github.com/skymyyang/salt-k8s-ha.git
+[root@linux-node1 ~]# git clone -b 1.13-Release https://github.com/skymyyang/salt-k8s-ha.git
 [root@linux-node1 ~]# cd salt-k8s-ha/
 [root@linux-node1 ~]# mv * /srv/
 [root@linux-node1 srv]# /bin/cp /srv/roster /etc/salt/roster
 [root@linux-node1 srv]# /bin/cp /srv/master /etc/salt/master
 ```
 
-2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载k8s-v1.12.5-auto.zip。
+2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.13.4-auto.7z` 。
 下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压，注意是 `files` 目录在 `/srv/salt/k8s/`目录下。
-Kubernetes二进制文件下载地址： `https://pan.baidu.com/s/1Ag2ocpVmkg-uEoV13A7HFw`
+Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1CdhDg_PeHXrKZT8NrgXB1Q`
+提取码：`1kmo`
 
 ```bash
 [root@linux-node1 ~]# cd /srv/salt/k8s/
-[root@linux-node1 k8s]# unzip k8s-v1.12.5-auto.zip
-[root@linux-node1 k8s]# rm -f k8s-v1.12.5-auto.zip
+[root@linux-node1 k8s]# 7za x k8s-v1.13.4-auto.7z -r -o./
+[root@linux-node1 k8s]# rm -f k8s-v1.13.4-auto.7z
 [root@linux-node1 k8s]# ls -l files/
 total 0
-drwxr-xr-x 2 root root  94 Jan 18 19:19 cfssl-1.2
-drwxr-xr-x 2 root root 195 Jan 18 19:19 cni-plugins-amd64-v0.7.4
-drwxr-xr-x 3 root root 123 Jan 18 19:19 etcd-v3.3.10-linux-amd64
-drwxr-xr-x 2 root root  47 Jan 18 19:19 flannel-v0.10.0-linux-amd64
-drwxr-xr-x 3 root root  17 Jan 18 19:19 k8s-v1.12.5
-
+drwx------ 2 root root  94 Mar 18 13:41 cfssl-1.2
+drwx------ 2 root root 195 Mar 18 13:41 cni-plugins-amd64-v0.7.4
+drwx------ 3 root root 123 Mar 18 13:41 etcd-v3.3.10-linux-amd64
+drwx------ 2 root root  47 Mar 18 13:41 flannel-v0.10.0-linux-amd64
+drwx------ 3 root root  17 Mar 18 13:41 k8s-v1.13.4
+drwx------ 2 root root  33 Mar 18 20:17 nginx-1.15.3
 ```
 
 ## 3.Salt SSH管理的机器以及角色分配
@@ -192,6 +197,9 @@ MASTER_H1: "linux-node1"
 MASTER_H2: "linux-node2"
 MASTER_H3: "linux-node3"
 
+#KUBE-APISERVER的反向代理地址端口
+KUBE_APISERVER: "https://127.0.0.1:8443"
+
 #设置ETCD集群访问地址（必须修改）
 ETCD_ENDPOINTS: "https://192.168.150.141:2379,https://192.168.150.142:2379,https://192.168.150.143:2379"
 
@@ -203,11 +211,13 @@ ETCD_CLUSTER: "etcd-node1=https://192.168.150.141:2380,etcd-node2=https://192.16
 #通过Grains FQDN自动获取本机IP地址，请注意保证主机名解析到本机IP地址
 NODE_IP: {{ grains['fqdn_ip4'][0] }}
 HOST_NAME: {{ grains['fqdn'] }}
+
 #设置BOOTSTARP的TOKEN，可以自己生成
 BOOTSTRAP_TOKEN: "be8dad.da8a699a46edc482"
 TOKEN_ID: "be8dad"
 TOKEN_SECRET: "da8a699a46edc482"
 ENCRYPTION_KEY: "8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA="
+
 #配置Service IP地址段
 SERVICE_CIDR: "10.1.0.0/16"
 
@@ -234,7 +244,6 @@ MASTER_VIP: "192.168.150.253"
 
 #设置网卡名称
 VIP_IF: "ens32"
-
 
 ```
 
