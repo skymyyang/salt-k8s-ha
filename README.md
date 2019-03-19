@@ -1,7 +1,7 @@
 # SaltStack自动化部署HA-Kubernetes
 - 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：`https://github.com/skymyyang/salt-k8s-ha`
-- SaltStack自动化部署Kubernetes v1.12.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
-- 该项目也兼容kubernetes v1.13.3版本，亲测可用。只需将原版本目录中 `/srv/salt/k8s/files/k8s-v1.12.5/bin` 的bin目录下的二进制文件替换为新版本即可；其他无需更改。
+- SaltStack自动化部署 `Kubernetes v1.12.5` 版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
+- SaltStack自动化部署 `Kubernetes v1.13.4` 版本，请切换到 `1.13-Release` 分支。
 
 ## 版本明细：Release-v1.12.5
 - 测试通过系统：CentOS 7.6
@@ -23,8 +23,6 @@
 ## 技术交流QQ群（加群请备注来源于Github）：
 - Docker&Kubernetes：796163694
 
-- 关于本帖子上的手动部署，我还没有进行验证和修改，还只能适用于原作者的1.10.3版本；感兴趣的同学可以看一下两位作者的教程。
-
 - 本教程的来源于以下教程而生成，在此特别感谢两位作者。
 
   和我一步步部署 kubernetes 集群   `https://github.com/opsnull/follow-me-install-kubernetes-cluster`
@@ -33,7 +31,7 @@
 
 ## 案例架构图
 
-  ![架构图](https://skymyyang.github.io/img/k8s-ha.jpg)
+  ![架构图](https://skymyyang.github.io/img/k8s2.png)
 
 ## 0.系统初始化(必备)
 
