@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       Jason Zhao
-# Email:        shundong.zhao@linuxhot.com
-# Organization: http://www.devopsedu.com/
+# Author:       skymyyang
+# Email:        yang-li@live.cn
+# Organization: skymyyyang.github.io
 # Description:  Flannel
 #******************************************
 {% set flannel_version = "flannel-v0.10.0-linux-amd64" %}

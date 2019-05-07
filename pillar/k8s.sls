@@ -60,5 +60,5 @@ CLUSTER_DNS_DOMAIN: "cluster.local."
 #设置Master的VIP地址(必须修改)
 MASTER_VIP: "192.168.150.253"
 
-#设置网卡名称
+#设置网卡名称，一定要改
 VIP_IF: "ens32"
