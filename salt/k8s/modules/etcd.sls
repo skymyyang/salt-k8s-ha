@@ -5,12 +5,10 @@
 # Organization: skymyyyang.github.io
 # Description:  ETCD Cluster
 #******************************************
-{% set etcd_version = "etcd-v3.3.10-linux-amd64" %}
+{% set etcd_version = "etcd-v3.3.13-linux-amd64" %}
 
 include:
   - k8s.modules.base-dir
-  - k8s.modules.cfssl
-  - k8s.modules.ca-file
 
 etcd-bin:
   file.managed:
@@ -20,40 +18,28 @@ etcd-bin:
     - group: root
     - mode: 755
 
-#etcdctl-bin:
-#  file.managed:
-#    - name: /opt/kubernetes/bin/etcdctl
-#    - source: salt://k8s/files/{{ etcd_version }}/etcdctl
-#    - user: root
-#    - group: root
-#    - mode: 755
-
-ectd-csr-json:
-  file.managed:
-    - name: /opt/kubernetes/ssl/etcd-csr.json
-    - source: salt://k8s/templates/etcd/etcd-csr.json.template
-    - user: root
-    - group: root
-    - mode: 644
-    - template: jinja
-    - defaults:
-        MASTER_IP_M1: {{ pillar['MASTER_IP_M1'] }}
-        MASTER_IP_M2: {{ pillar['MASTER_IP_M2'] }}
-        MASTER_IP_M3: {{ pillar['MASTER_IP_M3'] }}
-
-etcd-ssl:
-  cmd.run:
-    - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes etcd-csr.json | /opt/kubernetes/bin/cfssljson -bare etcd
-    - unless: test -f /opt/kubernetes/ssl/etcd.pem
+etcdctl-bin:
+ file.managed:
+   - name: /opt/kubernetes/bin/etcdctl
+   - source: salt://k8s/files/{{ etcd_version }}/etcdctl
+   - user: root
+   - group: root
+   - mode: 755
 
 etcd-dir:
   file.directory:
     - name: /var/lib/etcd
+etcd-wal-dir:
+  file.directory:
+    - name: /var/lib/etcd/wal
+etcd-config-dir:
+  file.directory:
+    - name: /etc/etcd
 
 etcd-config:
   file.managed:
-    - name: /opt/kubernetes/cfg/etcd.conf
-    - source: salt://k8s/templates/etcd/etcd.conf.template
+    - name: /etc/etcd/etcd.config.yml
+    - source: salt://k8s/templates/etcd/etcd.confing.yml.template
     - user: root
     - group: root
     - mode: 644

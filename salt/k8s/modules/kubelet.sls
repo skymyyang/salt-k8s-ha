@@ -6,12 +6,12 @@
 # Description:  Kubernetes Node kubelet
 #******************************************
 
-{% set k8s_version = "k8s-v1.13.4" %}
+{% set k8s_version = "k8s-v1.13.5" %}
 
 
 include:
-  - k8s.modules.cni
   - k8s.modules.base-dir
+  - k8s.modules.cni
   - k8s.modules.docker
 
 kubelet-workdir:

@@ -19,12 +19,12 @@ MASTER_H3: "linux-node3"
 KUBE_APISERVER: "https://127.0.0.1:8443"
 
 #设置ETCD集群访问地址（必须修改）
-ETCD_ENDPOINTS: "https://192.168.150.141:2379,https://192.168.150.142:2379,https://192.168.150.143:2379"
+ETCD_ENDPOINTS: "http://192.168.150.141:2379,http://192.168.150.142:2379,http://192.168.150.143:2379"
 
 FLANNEL_ETCD_PREFIX: "/kubernetes/network"
 
 #设置ETCD集群初始化列表（必须修改）
-ETCD_CLUSTER: "etcd-node1=https://192.168.150.141:2380,etcd-node2=https://192.168.150.142:2380,etcd-node3=https://192.168.150.143:2380"
+ETCD_CLUSTER: "etcd-node1=http://192.168.150.141:2380,etcd-node2=http://192.168.150.142:2380,etcd-node3=http://192.168.150.143:2380"
 
 #通过Grains FQDN自动获取本机IP地址，请注意保证主机名解析到本机IP地址
 NODE_IP: {{ grains['fqdn_ip4'][0] }}

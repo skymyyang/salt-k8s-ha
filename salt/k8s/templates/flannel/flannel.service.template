@@ -7,16 +7,20 @@ After=etcd.service
 Before=docker.service
 
 [Service]
+# This is needed because of this: https://github.com/coreos/flannel/issues/792
+# Kubernetes knows the nodes by their FQDN so we have to use the FQDN
+#Environment=NODE_NAME=my-node.foo.bar.com
+# Note that we don't specify any etcd option. This is because we want to talk
+# to the apiserver instead. The apiserver then talks to etcd on flannel's
+# behalf.
+Environment=NODE_NAME={{ HOST_NAME }}
 ExecStart=/opt/kubernetes/bin/flanneld \
-  -etcd-cafile=/opt/kubernetes/ssl/ca.pem  \
-  -etcd-certfile=/opt/kubernetes/ssl/flanneld.pem \
-  -etcd-keyfile=/opt/kubernetes/ssl/flanneld-key.pem \
-  -etcd-endpoints={{ ETCD_ENDPOINTS }} \
-  -etcd-prefix={{ FLANNEL_ETCD_PREFIX }} \
-  -iface={{ VIP_IF }} \
-  -ip-masq \
-  -kube-subnet-mgr
-ExecStartPost=/opt/kubernetes/bin/mk-docker-opts.sh -k DOCKER_NETWORK_OPTIONS -d /run/flannel/docker
+  --kube-subnet-mgr=true \
+  --kubeconfig-file=/opt/kubernetes/cfg/flanneld.kubeconfig \
+  --ip-masq=true \
+  --iface={{ VIP_IF }} \
+  --public-ip={{ NODE_IP }} \
+  --v=2
 Restart=always
 RestartSec=5
 StartLimitInterval=0
@@ -24,4 +28,3 @@ Type=notify
 
 [Install]
 WantedBy=multi-user.target
-RequiredBy=docker.service

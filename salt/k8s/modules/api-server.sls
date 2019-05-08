@@ -6,7 +6,11 @@
 # Description:  Kubernetes API Server
 #******************************************
 
-{% set k8s_version = "k8s-v1.13.4" %}
+{% set k8s_version = "k8s-v1.13.5" %}
+
+include:
+  - k8s.modules.kubectl
+
 
 kube-api-server-csr-json:
   file.managed:
@@ -24,6 +28,7 @@ kube-api-server-csr-json:
   cmd.run:
     - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes kubernetes-csr.json | /opt/kubernetes/bin/cfssljson -bare kubernetes
     - unless: test -f /opt/kubernetes/ssl/kubernetes.pem
+
 metrics-server-csr-json:
   file.managed:
     - name: /opt/kubernetes/ssl/metrics-server-csr.json
