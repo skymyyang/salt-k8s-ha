@@ -1,6 +1,6 @@
 # SaltStack自动化部署HA-Kubernetes
 - 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：`https://github.com/skymyyang/salt-k8s-ha`
-- SaltStack自动化部署Kubernetes v1.13.4版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
+- SaltStack自动化部署Kubernetes v1.13.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
 
 
 ## 版本明细：Release-v1.13.5
@@ -135,8 +135,8 @@ linux-node4
 
 2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.13.5-auto.7z` 。
 下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压，注意是 `files` 目录在 `/srv/salt/k8s/`目录下。
-Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1CdhDg_PeHXrKZT8NrgXB1Q`
-提取码：`1kmo`
+Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1aIfj-8Zo26bPo_3cXFhkXA `
+提取码：`xwjh`
 
 ```bash
 [root@linux-node1 ~]# cd /srv/salt/k8s/
@@ -290,14 +290,21 @@ VIP_IF: "ens32"
 ```bash
 [root@linux-node1 ~]# salt-ssh '*' state.highstate
 ```
-由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！
+由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！执行过程中存在cfssl生成证书的warning，大家可以忽略。
 
 ## 6.测试Kubernetes安装
-```
+```bash
 #先验证etcd
 [root@linux-node1 ~]# source /etc/profile
 [root@linux-node1 ~]# etcdctl --endpoints=http://192.168.150.141:2379 cluster-health
+member 937f18b4916f332b is healthy: got healthy result from http://192.168.150.143:2379
+member d882a8adbfbb5755 is healthy: got healthy result from http://192.168.150.142:2379
+member eae26a25cb42d19f is healthy: got healthy result from http://192.168.150.141:2379
+cluster is healthy
 [root@linux-node1 ~]# etcdctl --endpoints=http://192.168.150.141:2379 member list
+937f18b4916f332b: name=etcd-node3 peerURLs=http://192.168.150.143:2380 clientURLs=http://192.168.150.143:2379 isLeader=false
+d882a8adbfbb5755: name=etcd-node2 peerURLs=http://192.168.150.142:2380 clientURLs=http://192.168.150.142:2379 isLeader=false
+eae26a25cb42d19f: name=etcd-node1 peerURLs=http://192.168.150.141:2380 clientURLs=http://192.168.150.141:2379 isLeader=true
 [root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
 controller-manager   Healthy   ok                  
@@ -404,19 +411,7 @@ kubectl taint node k8s-m2 node-role.kubernetes.io/master=linux-node2:PreferNoSch
 kubectl taint node k8s-m3 node-role.kubernetes.io/master=linux-node3:PreferNoSchedule
 ```
 
-## 10.已知的错误。
-
-此错误暂未发现影响
-
-```bash
-[root@linux-node2 ~]# journalctl -u kube-proxy
-......
-Feb 21 12:02:22 linux-node2 kube-proxy[40633]: I0221 12:02:22.106696   40633 server_others.go:216] Tearing down inactive rules.
-Feb 21 12:02:22 linux-node2 kube-proxy[40633]: E0221 12:02:22.195324   40633 proxier.go:430] Failed to execute iptables-restore for nat: exit status 1 (iptables-restore: line 7 failed
-Feb 21 12:02:22 linux-node2 kube-proxy[40633]: )
-......
-```
-如果有洁癖的，忍受不了这种错误的，我们可以把kube-proxy按照daemonset的方式部署;按照这种方式部署的话要先停用二进制安装的kube-proxy。
+## 10.（可选）可以把kube-proxy按照daemonset的方式部署;按照这种方式部署的话要先停用二进制安装的kube-proxy。
 
 PS:这里配置不一样的话需要修改yaml文件。
 
@@ -436,5 +431,4 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 #### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
 
 ![支付宝支付](https://skymyyang.github.io/img/zfb3.png)
-
 ![微信支付](https://skymyyang.github.io/img/wx1.png)
