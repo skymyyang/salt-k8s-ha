@@ -14,6 +14,7 @@ docker-install:
   pkg.installed:
     - name: docker-ce
     - version: 3:18.09.2-3.el7
+    - allow_updates: True
 docker-config-dir:
   file.directory:
     - name: /etc/docker
