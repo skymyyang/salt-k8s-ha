@@ -17,14 +17,12 @@ cni-dir-net:
 
 cni-default-conf:
   file.managed:
-    - name: /etc/cni/net.d/10-default.conf
-    - source: salt://k8s/templates/cni/10-default.conf.template
+    - name: /etc/cni/net.d/10-flannel.conflist
+    - source: salt://k8s/templates/cni/10-flannel.conflist.template
     - user: root
     - group: root
     - mode: 644
     - template: jinja
-    - defaults:
-        POD_CIDR: {{ pillar['POD_CIDR'] }}
 
 cni-bin:
   file.recurse:

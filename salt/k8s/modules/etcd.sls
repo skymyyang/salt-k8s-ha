@@ -52,7 +52,7 @@ etcd-config:
 etcd-service:
   file.managed:
     - name: /usr/lib/systemd/system/etcd.service
-    - source: salt://k8s/templates/etcd/etcd.service
+    - source: salt://k8s/templates/etcd/etcd.service.template
     - user: root
     - group: root
     - mode: 644

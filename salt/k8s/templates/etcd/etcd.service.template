@@ -5,7 +5,7 @@ After=network.target
 
 [Service]
 Type=notify
-ExecStart=/usr/bin/etcd --config-file=/etc/etcd/etcd.config.yml --auto-compaction-retention=1 --max-request-bytes=33554432 --quota-backend-bytes=8589934592
+ExecStart=/opt/kubernetes/bin/etcd --config-file=/etc/etcd/etcd.config.yml --auto-compaction-retention=1 --max-request-bytes=33554432 --quota-backend-bytes=8589934592
 Restart=on-failure
 RestartSec=10
 LimitNOFILE=65536

@@ -12,7 +12,8 @@ docker-install:
   cmd.run:
     - name: yum install -y yum-utils device-mapper-persistent-data lvm2 && yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
   pkg.installed:
-    - name: docker-ce-18.09.2
+    - name: docker-ce
+    - version: 3:18.09.2-3.el7
 docker-config-dir:
   file.directory:
     - name: /etc/docker

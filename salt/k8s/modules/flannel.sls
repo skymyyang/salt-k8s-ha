@@ -8,6 +8,10 @@
 {% set flannel_version = "flannel-v0.11.0-linux-amd64" %}
 
 
+kube-flannel-dir:
+  file.directory:
+    - name: /etc/kube-flannel
+
 flannel-bin:
   file.managed:
     - name: /opt/kubernetes/bin/flanneld
@@ -15,6 +19,17 @@ flannel-bin:
     - user: root
     - group: root
     - mode: 755
+net-conf:
+  file.managed:
+    - name: /etc/kube-flannel/net-conf.json
+    - source: salt://k8s/templates/flannel/net-conf.json.template
+    - user: root
+    - group: root
+    - mode: 755
+    - template: jinja
+    - defaults:
+        PodCIDR: {{ pillar['POD_CIDR'] }}
+
 flannel-kubeconfig:
   file.managed:
     - name: /opt/kubernetes/bin/flannelkubeconfig.sh
@@ -48,4 +63,4 @@ flannel-service:
     - watch:
       - file: flannel-service
     - require:
-      - file: flannel-etcd
+      - file: net-conf
