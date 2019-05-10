@@ -9,7 +9,7 @@
 - salt-ssh:     salt-ssh 2019.2.0-1
 - Kubernetes：  v1.13.5
 - Etcd:         v3.3.13
-- Docker:       v18.09.2
+- Docker-ce:       v18.09.2
 - Flannel：     v0.11.0
 - CNI-Plugins： v0.7.4
 - nginx:        v1.15.3
