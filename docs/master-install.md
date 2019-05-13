@@ -1,4 +1,4 @@
-## 1.部署Kubernetes API服务部署
+## 部署Kubernetes API服务部署
 ### 0.准备软件包
 ```
 [root@linux-node1 ~]# cd /usr/local/src/kubernetes
@@ -14,7 +14,9 @@
   "CN": "kubernetes",
   "hosts": [
     "127.0.0.1",
-    "192.168.56.11",
+    "192.168.150.141",
+    "192.168.150.142",
+    "192.168.150.143",
     "10.1.0.1",
     "kubernetes",
     "kubernetes.default",
@@ -37,31 +39,89 @@
   ]
 }
 ```
+- hosts 字段指定授权使用该证书的 IP 或域名列表，这里列出了 VIP 、apiserver 节点 IP、kubernetes 服务 IP 和域名
+- 域名最后字符不能是 .(如不能为 kubernetes.default.svc.cluster.local.)，否则解析时失败，提示： x509: cannot parse dnsName "kubernetes.default.svc.cluster.local."；
+- 如果使用非 cluster.local 域名，如 mofangge.com，则需要修改域名列表中的最后两个域名为：kubernetes.default.svc.mofangge、kubernetes.default.svc.mofangge.com
+- kubernetes 服务 IP 是 apiserver 自动创建的，一般是 --service-cluster-ip-range 参数指定的网段的第一个IP，后续可以通过如下命令获取：
 
-### 2.生成 kubernetes 证书和私钥
+```Bash
+$ kubectl get svc kubernetes
+NAME         CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   10.1.0.1   <none>        443/TCP   1d
 ```
+
+### 2.生成 kubernetes 证书和私钥,并拷贝至其他所有节点
+
+```Bash
  [root@linux-node1 src]# cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem \
    -ca-key=/opt/kubernetes/ssl/ca-key.pem \
    -config=/opt/kubernetes/ssl/ca-config.json \
    -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes
 [root@linux-node1 src]# cp kubernetes*.pem /opt/kubernetes/ssl/
-[root@linux-node1 ~]# scp kubernetes*.pem 192.168.56.12:/opt/kubernetes/ssl/
-[root@linux-node1 ~]# scp kubernetes*.pem 192.168.56.13:/opt/kubernetes/ssl/
+[root@linux-node1 ~]# scp kubernetes*.pem linux-node2:/opt/kubernetes/ssl/
+[root@linux-node1 ~]# scp kubernetes*.pem linux-node3:/opt/kubernetes/ssl/
+[root@linux-node1 ~]# scp kubernetes*.pem linux-node4:/opt/kubernetes/ssl/
 ```
 
-### 3.创建 kube-apiserver 使用的客户端 token 文件
-```
-[root@linux-node1 ~]#  head -c 16 /dev/urandom | od -An -t x | tr -d ' '
-ad6d5bb607a186796d8861557df0d17f 
-[root@linux-node1 ~]# vim /opt/kubernetes/ssl/ bootstrap-token.csv
-ad6d5bb607a186796d8861557df0d17f,kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+### 3.创建加密配置文件
+
+`ENCRYPTION_KEY`可以通过 `head -c 32 /dev/urandom | base64` 来生成;这里将ENCRYPTION_KEY改为`8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA=`
+
+```Bash
+cat > /opt/kubernetes/ssl/encryption-config.yaml <<EOF
+kind: EncryptionConfig
+apiVersion: v1
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: 8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA=
+      - identity: {}
+EOF
+
+#将加密配置文件拷贝到 master 节点的 /opt/kubernetes/ssl/ 目录下
 ```
 
-### 4.创建基础用户名/密码认证配置
+### 4.创建 metrics-server 使用的证书
+
+- 创建 metrics-server 证书签名请求
+
+```Bash
+cat > /opt/kubernetes/ssl/metrics-server-csr.json <<EOF
+{
+  "CN": "aggregator",
+  "hosts": [],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "BeiJing",
+      "L": "BeiJing",
+      "O": "k8s",
+      "OU": "4Paradigm"
+    }
+  ]
+}
+EOF
 ```
-[root@linux-node1 ~]# vim /opt/kubernetes/ssl/basic-auth.csv
-admin,admin,1
-readonly,readonly,2
+注意： CN 名称为 aggregator，需要与 kube-apiserver 的 --requestheader-allowed-names 参数配置一致
+- 生成 metrics-server 证书和私钥
+
+```Bash
+cd /opt/kubernetes/ssl
+/opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes metrics-server-csr.json | /opt/kubernetes/bin/cfssljson -bare metrics-server
+```
+- 将生成的证书和私钥文件拷贝到 kube-apiserver 节点
+
+```Bash
+scp metrics-server*.pem linux-node2:/opt/kubernetes/ssl/
+scp metrics-server*.pem linux-node3:/opt/kubernetes/ssl/
 ```
 
 ### 5.部署Kubernetes API Server
@@ -74,36 +134,46 @@ After=network.target
 
 [Service]
 ExecStart=/opt/kubernetes/bin/kube-apiserver \
-  --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction \
-  --bind-address=192.168.56.11 \
-  --insecure-bind-address=127.0.0.1 \
+  --enable-admission-plugins=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \
+  --allow-privileged=true \
+  --experimental-encryption-provider-config=/opt/kubernetes/ssl/encryption-config.yaml \
+  --advertise-address=192.168.150.141 \
+  --insecure-port=0 \
+  --secure-port=6443 \
   --authorization-mode=Node,RBAC \
-  --runtime-config=rbac.authorization.k8s.io/v1 \
-  --kubelet-https=true \
-  --anonymous-auth=false \
-  --basic-auth-file=/opt/kubernetes/ssl/basic-auth.csv \
-  --enable-bootstrap-token-auth \
-  --token-auth-file=/opt/kubernetes/ssl/bootstrap-token.csv \
+  --enable-bootstrap-token-auth=true \
   --service-cluster-ip-range=10.1.0.0/16 \
   --service-node-port-range=20000-40000 \
   --tls-cert-file=/opt/kubernetes/ssl/kubernetes.pem \
   --tls-private-key-file=/opt/kubernetes/ssl/kubernetes-key.pem \
   --client-ca-file=/opt/kubernetes/ssl/ca.pem \
+  --kubelet-client-certificate=/opt/kubernetes/ssl/kubernetes.pem \
+  --kubelet-client-key=/opt/kubernetes/ssl/kubernetes-key.pem \
+  --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname \
   --service-account-key-file=/opt/kubernetes/ssl/ca-key.pem \
   --etcd-cafile=/opt/kubernetes/ssl/ca.pem \
   --etcd-certfile=/opt/kubernetes/ssl/kubernetes.pem \
   --etcd-keyfile=/opt/kubernetes/ssl/kubernetes-key.pem \
-  --etcd-servers=https://192.168.56.11:2379,https://192.168.56.12:2379,https://192.168.56.13:2379 \
+  --etcd-servers=https://192.168.150.141:2379,https://192.168.150.142:2379,https://192.168.150.143:2379 \
   --enable-swagger-ui=true \
-  --allow-privileged=true \
+  --max-mutating-requests-inflight=2000 \
+  --max-requests-inflight=4000 \
+  --requestheader-client-ca-file=/opt/kubernetes/ssl/ca.pem \
+  --requestheader-allowed-names= \
+  --requestheader-extra-headers-prefix="X-Remote-Extra-" \
+  --requestheader-group-headers=X-Remote-Group \
+  --requestheader-username-headers=X-Remote-User \
+  --proxy-client-cert-file=/opt/kubernetes/ssl/metrics-server.pem \
+  --proxy-client-key-file=/opt/kubernetes/ssl/metrics-server-key.pem \
+  --runtime-config=api/all=true \
+  --apiserver-count=3 \
   --audit-log-maxage=30 \
   --audit-log-maxbackup=3 \
   --audit-log-maxsize=100 \
-  --audit-log-path=/opt/kubernetes/log/api-audit.log \
-  --event-ttl=1h \
-  --v=2 \
-  --logtostderr=false \
-  --log-dir=/opt/kubernetes/log
+  --audit-log-path=/var/log/kube-apiserver-audit.log \
+  --event-ttl=168h \
+  --logtostderr=true \
+  --v=2
 Restart=on-failure
 RestartSec=5
 Type=notify
@@ -112,9 +182,25 @@ LimitNOFILE=65536
 [Install]
 WantedBy=multi-user.target
 ```
+- `--experimental-encryption-provider-config`：启用加密特性
+- `--authorization-mode=Node,RBAC`：开启 Node 和 RBAC 授权模式，拒绝未授权的请求
+- `--enable-admission-plugins`：启用 ServiceAccount 和 NodeRestriction
+- `--service-account-key-file`：签名 ServiceAccount Token 的公钥文件，kube-controller-manager 的 --service-account-private-key-file 指定私钥文件，两者配对使用
+- `--tls-*-file`：指定 apiserver 使用的证书、私钥和 CA 文件。--client-ca-file 用于验证 client (kue-controller-manager、kube-scheduler、kubelet、kube-proxy 等)请求所带的证书。
+- `--kubelet-client-certificate`、`--kubelet-client-key`：如果指定，则使用 https 访问 kubelet APIs；需要为证书对应的用户(上面 kubernetes*.pem 证书的用户为 kubernetes) 用户定义 RBAC 规则，否则访问 kubelet API 时提示未授权
+- `--bind-address`：不能为 127.0.0.1，否则外界不能访问它的安全端口 6443
+- `--insecure-port=0`：闭监听非安全端口(8080)
+- `--service-cluster-ip-range`：指定 Service Cluster IP 地址段
+- `--service-node-port-range`：指定 NodePort 的端口范围
+- `--runtime-config=api/all=true`：启用所有版本的 APIs，如 autoscaling/v2alpha1
+- `--enable-bootstrap-token-auth`：启用 kubelet bootstrap 的 token 认证
+- `--apiserver-count=3`：指定集群运行模式，多台 kube-apiserver 会通过 leader 选举产生一个工作节点，其它节点处于阻塞状态
 
 ### 6.启动API Server服务
-```
+```Bash
+#拷贝至其他主节点
+[root@linux-node1 ~]#scp /usr/lib/systemd/system/kube-apiserver.service linux-node2:/usr/lib/systemd/system
+[root@linux-node1 ~]#scp /usr/lib/systemd/system/kube-apiserver.service linux-node3:/usr/lib/systemd/system
 [root@linux-node1 ~]# systemctl daemon-reload
 [root@linux-node1 ~]# systemctl enable kube-apiserver
 [root@linux-node1 ~]# systemctl start kube-apiserver
@@ -124,6 +210,17 @@ WantedBy=multi-user.target
 ```
 [root@linux-node1 ~]# systemctl status kube-apiserver
 ```
+### 7.打印 kube-apiserver 写入 etcd 的数据
+
+```Bash
+ETCDCTL_API=3 etcdctl \
+    --endpoints=https://192.168.150.141:2379 \
+    --cacert=/opt/kubernetes/ssl/ca.pem \
+    --cert=/opt/kubernetes/ssl/etcd.pem \
+    --key=/opt/kubernetes/ssl/etcd-key.pem \
+    get /registry/ --prefix --keys-only
+```
+## 部署Kubectl
 
 ## 部署Controller Manager服务
 ```
@@ -281,9 +378,9 @@ Switched to context "kubernetes".
 ```
 [root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
-controller-manager   Healthy   ok                  
-scheduler            Healthy   ok                  
-etcd-1               Healthy   {"health":"true"}   
-etcd-2               Healthy   {"health":"true"}   
-etcd-0               Healthy   {"health":"true"}   
+controller-manager   Healthy   ok
+scheduler            Healthy   ok
+etcd-1               Healthy   {"health":"true"}
+etcd-2               Healthy   {"health":"true"}
+etcd-0               Healthy   {"health":"true"}
 ```

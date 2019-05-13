@@ -126,7 +126,7 @@ sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 2.2 获取本项目 `1.13.5` 分支代码，并放置在 `/srv` 目录
 
 ```bash
-[root@linux-node1 ~]# git clone -b 1.13.5 https://github.com/skymyyang/salt-k8s-ha.git
+[root@linux-node1 ~]# git clone https://github.com/skymyyang/salt-k8s-ha.git
 [root@linux-node1 ~]# cd salt-k8s-ha/
 [root@linux-node1 ~]# mv * /srv/
 [root@linux-node1 srv]# /bin/cp /srv/roster /etc/salt/roster
@@ -433,6 +433,7 @@ kube-proxy-wpfrh          1/1     Running   2          16h
 kube-proxy-zgg6t          1/1     Running   2          16h
 ```
 ## 11. 一步一步安装kubernetes
+
 手动安装
 <table border="0">
     <tr>
@@ -441,10 +442,12 @@ kube-proxy-zgg6t          1/1     Running   2          16h
         <td><a href="docs/nginx-install.md">2.Nginx部署</a></td>
         <td><a href="docs/ca-install.md">3.CA部署</a></td>
         <td><a href="docs/etcd-install.md">4.ETCD集群部署</a></td>
-        <td><a href="docs/">5.Node节点部署</a></td>
-        <td><a href="docs/">Flannel部署</a></td>
+        <td><a href="docs/">5.Master节点部署</a></td>
+        <td><a href="docs/">6.Node节点部署</a></td>
+        <td><a href="docs/">7.Flannel部署</a></td>
     </tr>
 </table>
+
 #### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
 
 ![支付宝支付](https://skymyyang.github.io/img/zfb3.png)
