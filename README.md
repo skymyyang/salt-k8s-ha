@@ -87,9 +87,9 @@ linux-node4
 3. 关闭SELinux和防火墙以及NetworkManager
 
 ```bash
-   systemctl disable --now firewalld NetworkManager
-   setenforce 0
-   sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
+systemctl disable --now firewalld NetworkManager
+setenforce 0
+sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 ```
 
 4. 升级内核
@@ -146,9 +146,9 @@ Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1aIfj
 total 0
 drwx------ 2 root root  94 Mar 18 13:41 cfssl-1.2
 drwx------ 2 root root 195 Mar 18 13:41 cni-plugins-amd64-v0.7.4
-drwx------ 3 root root 123 Mar 18 13:41 etcd-v3.3.10-linux-amd64
-drwx------ 2 root root  47 Mar 18 13:41 flannel-v0.10.0-linux-amd64
-drwx------ 3 root root  17 Mar 18 13:41 k8s-v1.13.4
+drwx------ 3 root root 123 Mar 18 13:41 etcd-v3.3.13-linux-amd64
+drwx------ 2 root root  47 Mar 18 13:41 flannel-v0.11.0-linux-amd64
+drwx------ 3 root root  17 Mar 18 13:41 k8s-v1.13.5
 drwx------ 2 root root  33 Mar 18 20:17 nginx-1.15.3
 ```
 
@@ -158,8 +158,10 @@ drwx------ 2 root root  33 Mar 18 20:17 nginx-1.15.3
 - etcd-role: 用来设置etcd的角色，如果只需要部署一个etcd，只需要在一台机器上设置即可
 - etcd-name: 如果对一台机器设置了etcd-role就必须设置etcd-name
 
-```yaml
 [root@linux-node1 ~]# vim /etc/salt/roster
+
+```Yaml
+
 linux-node1:
   host: 192.168.150.141
   user: root
@@ -287,12 +289,14 @@ VIP_IF: "ens32"
 注：如果执行失败，新手建议推到重来，请检查各个节点的主机名解析是否正确（监听的IP地址依赖主机名解析）。
 
 5.3 部署K8S集群
+
 ```bash
 [root@linux-node1 ~]# salt-ssh '*' state.highstate
 ```
 由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！执行过程中存在cfssl生成证书的warning，大家可以忽略。
 
 ## 6.测试Kubernetes安装
+
 ```bash
 #先验证etcd
 [root@linux-node1 ~]# source /etc/profile
@@ -307,11 +311,11 @@ d882a8adbfbb5755: name=etcd-node2 peerURLs=http://192.168.150.142:2380 clientURL
 eae26a25cb42d19f: name=etcd-node1 peerURLs=http://192.168.150.141:2380 clientURLs=http://192.168.150.141:2379 isLeader=true
 [root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
-controller-manager   Healthy   ok                  
-scheduler            Healthy   ok                  
-etcd-2               Healthy   {"health":"true"}   
-etcd-1               Healthy   {"health":"true"}   
-etcd-0               Healthy   {"health":"true"}  
+controller-manager   Healthy   ok
+scheduler            Healthy   ok
+etcd-2               Healthy   {"health":"true"}
+etcd-1               Healthy   {"health":"true"}
+etcd-0               Healthy   {"health":"true"}
 [root@linux-node1 ~]# kubectl get node
 NAME          STATUS   ROLES    AGE     VERSION
 linux-node1   Ready    master   3h12m   v1.13.5
@@ -321,7 +325,7 @@ linux-node4   Ready    node     3h14m   v1.13.5
 ```
 ## 7.测试Kubernetes集群和Flannel网络
 
-```
+```Bash
 [root@linux-node1 ~]# kubectl create deployment nginx --image=nginx:alpine
 deployment.apps/nginx created
 需要等待拉取镜像，可能稍有的慢，请等待。
@@ -364,7 +368,7 @@ nginx-54458cd494-zp9zp   1/1     Running   0          3m57s
 
 - 1.设置SSH无密码登录，并且在 `/etc/hosts` 中继续增加对应的解析。确保所有节点都能解析。
 - 2.在 `/etc/salt/roster` 里面，增加对应的机器。
-- 3.执行SaltStack状态 `salt-ssh '*' state.highstate`
+- 3.执行SaltStack状态 `salt-ssh 'linux-node5' state.highstate`
 
 ```Bash
 [root@linux-node5 ~]# vim /etc/salt/roster
@@ -388,17 +392,17 @@ linux-node5:
         <td><a href="docs/dashboard.md">2.Dashboard部署</a></td>
         <td><a href="docs/heapster.md">3.heapster部署</a></td>
         <td><a href="docs/metrics-server.md">4.Metrics Server</a></td>
-</table>
-
-<table border="0">
-    <tr>
-        <td><strong>必备插件-2</strong></td>
+        </tr>
+      <tr>
+        <td><strong>必备插件</strong></td>
         <td><a href="docs/ingress-nginx.md">5.Ingress-nginx部署</a></td>
         <td><a href="docs/ingress.md">6.Ingress扩展</a></td>
         <td><a href="docs/metallb.md">7.MetalLB</a></td>
         <td><a href="docs/helm.md">8.Helm部署</a></td>
     </tr>
 </table>
+
+
 
 为Master节点打上污点，让POD尽可能的不要调度到Master节点上。
 
@@ -428,6 +432,19 @@ kube-proxy-pjpt5          1/1     Running   2          16h
 kube-proxy-wpfrh          1/1     Running   2          16h
 kube-proxy-zgg6t          1/1     Running   2          16h
 ```
+## 11. 一步一步安装kubernetes
+手动安装
+<table border="0">
+    <tr>
+        <td><strong>手动部署</strong></td>
+        <td><a href="docs/init.md">1.系统初始化</a></td>
+        <td><a href="docs/nginx-install.md">2.Nginx部署</a></td>
+        <td><a href="docs/ca-install.md">3.CA部署</a></td>
+        <td><a href="docs/etcd-install.md">4.ETCD集群部署</a></td>
+        <td><a href="docs/">5.Node节点部署</a></td>
+        <td><a href="docs/">Flannel部署</a></td>
+    </tr>
+</table>
 #### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
 
 ![支付宝支付](https://skymyyang.github.io/img/zfb3.png)

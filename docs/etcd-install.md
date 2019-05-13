@@ -3,12 +3,12 @@
 
 ## 0.准备etcd软件包
 ```
-wget https://github.com/coreos/etcd/releases/download/v3.2.18/etcd-v3.2.18-linux-amd64.tar.gz
-[root@linux-node1 src]# tar zxf etcd-v3.2.18-linux-amd64.tar.gz
-[root@linux-node1 src]# cd etcd-v3.2.18-linux-amd64
-[root@linux-node1 etcd-v3.2.18-linux-amd64]# cp etcd etcdctl /opt/kubernetes/bin/ 
-[root@linux-node1 etcd-v3.2.18-linux-amd64]# scp etcd etcdctl 192.168.56.12:/opt/kubernetes/bin/
-[root@linux-node1 etcd-v3.2.18-linux-amd64]# scp etcd etcdctl 192.168.56.13:/opt/kubernetes/bin/
+wget https://github.com/coreos/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
+[root@linux-node1 src]# tar zxf etcd-v3.3.13-linux-amd64.tar.gz
+[root@linux-node1 src]# cd etcd-v3.3.13-linux-amd64
+[root@linux-node1 etcd-v3.2.18-linux-amd64]# cp etcd etcdctl /opt/kubernetes/bin/
+[root@linux-node1 etcd-v3.2.18-linux-amd64]# scp etcd etcdctl linux-node2:/opt/kubernetes/bin/
+[root@linux-node1 etcd-v3.2.18-linux-amd64]# scp etcd etcdctl linux-node3:/opt/kubernetes/bin/
 ```
 
 
@@ -19,9 +19,9 @@ wget https://github.com/coreos/etcd/releases/download/v3.2.18/etcd-v3.2.18-linux
   "CN": "etcd",
   "hosts": [
     "127.0.0.1",
-"192.168.56.11",
-"192.168.56.12",
-"192.168.56.13"
+"192.168.150.141",
+"192.168.150.142",
+"192.168.150.143"
   ],
   "key": {
     "algo": "rsa",
@@ -46,7 +46,7 @@ wget https://github.com/coreos/etcd/releases/download/v3.2.18/etcd-v3.2.18-linux
   -config=/opt/kubernetes/ssl/ca-config.json \
   -profile=kubernetes etcd-csr.json | cfssljson -bare etcd
 会生成以下证书文件
-[root@k8s-master ~]# ls -l etcd*
+[root@linux-node1 ~]# ls -l etcd*
 -rw-r--r-- 1 root root 1045 Mar  5 11:27 etcd.csr
 -rw-r--r-- 1 root root  257 Mar  5 11:25 etcd-csr.json
 -rw------- 1 root root 1679 Mar  5 11:27 etcd-key.pem
@@ -55,10 +55,10 @@ wget https://github.com/coreos/etcd/releases/download/v3.2.18/etcd-v3.2.18-linux
 
 ## 3.将证书移动到/opt/kubernetes/ssl目录下
 ```
-[root@k8s-master ~]# cp etcd*.pem /opt/kubernetes/ssl
-[root@linux-node1 ~]# scp etcd*.pem 192.168.56.12:/opt/kubernetes/ssl
-[root@linux-node1 ~]# scp etcd*.pem 192.168.56.13:/opt/kubernetes/ssl
-[root@k8s-master ~]# rm -f etcd.csr etcd-csr.json
+[root@linux-node1 ~]# cp etcd*.pem /opt/kubernetes/ssl
+[root@linux-node1 ~]# scp etcd*.pem linux-node2:/opt/kubernetes/ssl
+[root@linux-node1 ~]# scp etcd*.pem linux-node3:/opt/kubernetes/ssl
+[root@linux-node1 ~]# rm -f etcd.csr etcd-csr.json
 ```
 
 ## 4.设置ETCD配置文件
@@ -70,19 +70,19 @@ ETCD_DATA_DIR="/var/lib/etcd/default.etcd"
 #ETCD_SNAPSHOT_COUNTER="10000"
 #ETCD_HEARTBEAT_INTERVAL="100"
 #ETCD_ELECTION_TIMEOUT="1000"
-ETCD_LISTEN_PEER_URLS="https://192.168.56.11:2380"
-ETCD_LISTEN_CLIENT_URLS="https://192.168.56.11:2379,https://127.0.0.1:2379"
+ETCD_LISTEN_PEER_URLS="https://192.168.150.141:2380"
+ETCD_LISTEN_CLIENT_URLS="https://192.168.150.141:2379,https://127.0.0.1:2379"
 #ETCD_MAX_SNAPSHOTS="5"
 #ETCD_MAX_WALS="5"
 #ETCD_CORS=""
 #[cluster]
-ETCD_INITIAL_ADVERTISE_PEER_URLS="https://192.168.56.11:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://192.168.150.141:2380"
 # if you use different ETCD_NAME (e.g. test),
 # set ETCD_INITIAL_CLUSTER value for this name, i.e. "test=http://..."
-ETCD_INITIAL_CLUSTER="etcd-node1=https://192.168.56.11:2380,etcd-node2=https://192.168.56.12:2380,etcd-node3=https://192.168.56.13:2380"
+ETCD_INITIAL_CLUSTER="etcd-node1=https://192.168.150.141:2380,etcd-node2=https://192.168.150.142:2380,etcd-node3=https://192.168.150.143:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="k8s-etcd-cluster"
-ETCD_ADVERTISE_CLIENT_URLS="https://192.168.56.11:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://192.168.150.141:2379"
 #[security]
 CLIENT_CERT_AUTH="true"
 ETCD_CA_FILE="/opt/kubernetes/ssl/ca.pem"
@@ -119,10 +119,10 @@ WantedBy=multi-user.target
 [root@linux-node1 ~]# systemctl enable etcd
 
 
-# scp /opt/kubernetes/cfg/etcd.conf 192.168.56.12:/opt/kubernetes/cfg/
-# scp /etc/systemd/system/etcd.service 192.168.56.12:/etc/systemd/system/
-# scp /opt/kubernetes/cfg/etcd.conf 192.168.56.13:/opt/kubernetes/cfg/
-# scp /etc/systemd/system/etcd.service 192.168.56.13:/etc/systemd/system/
+# scp /opt/kubernetes/cfg/etcd.conf linux-node2:/opt/kubernetes/cfg/
+# scp /etc/systemd/system/etcd.service linux-node2:/etc/systemd/system/
+# scp /opt/kubernetes/cfg/etcd.conf linux-node3:/opt/kubernetes/cfg/
+# scp /etc/systemd/system/etcd.service linux-node3:/etc/systemd/system/
 在所有节点上创建etcd存储目录并启动etcd
 [root@linux-node1 ~]# mkdir /var/lib/etcd
 [root@linux-node1 ~]# systemctl start etcd
@@ -132,12 +132,12 @@ WantedBy=multi-user.target
 
 ## 7.验证集群
 ```
-[root@linux-node1 ~]# etcdctl --endpoints=https://192.168.56.11:2379 \
+[root@linux-node1 ~]# etcdctl --endpoints=https://192.168.150.141:2379 \
   --ca-file=/opt/kubernetes/ssl/ca.pem \
   --cert-file=/opt/kubernetes/ssl/etcd.pem \
   --key-file=/opt/kubernetes/ssl/etcd-key.pem cluster-health
-member 435fb0a8da627a4c is healthy: got healthy result from https://192.168.56.12:2379
-member 6566e06d7343e1bb is healthy: got healthy result from https://192.168.56.11:2379
-member ce7b884e428b6c8c is healthy: got healthy result from https://192.168.56.13:2379
+member 435fb0a8da627a4c is healthy: got healthy result from https://192.168.150.142:2379
+member 6566e06d7343e1bb is healthy: got healthy result from https://192.168.150.143:2379
+member ce7b884e428b6c8c is healthy: got healthy result from https://192.168.150.141:2379
 cluster is healthy
 ```

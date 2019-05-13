@@ -3,7 +3,7 @@
 #### 所有机器关闭防火墙和SELinux
 
 ```bash
-systemctl disable --now firewalld NetworkManager
+systemctl disable --now firewalld NetworkManager postfix
 setenforce 0
 sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 ```

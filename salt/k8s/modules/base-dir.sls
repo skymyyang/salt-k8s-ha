@@ -84,7 +84,7 @@ sysctl-k8s-conf:
     - template: jinja
   cmd.run:
     - name: /usr/sbin/sysctl --system
-
+#设置 rsyslogd 和 systemd journald
 99-prophet.conf:
   file.managed:
     - name: /etc/systemd/journald.conf.d/99-prophet.conf
