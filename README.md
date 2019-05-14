@@ -288,12 +288,31 @@ VIP_IF: "ens32"
 ```
 注：如果执行失败，新手建议推到重来，请检查各个节点的主机名解析是否正确（监听的IP地址依赖主机名解析）。
 
-5.3 部署K8S集群
+5.3 部署K8S集群-Master节点
 
-```bash
-[root@linux-node1 ~]# salt-ssh '*' state.highstate
+这里首先安装master，由于node节点的flannel的kubeconfig配置文件依赖API-server，所以必须先要部署master节点。
+
+```Bash
+[root@linux-node1 ~]# salt-ssh -L 'linux-node1,linux-node2,linux-node3' state.sls k8s.master
 ```
 由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！执行过程中存在cfssl生成证书的warning，大家可以忽略。
+
+5.4 部署K8S集群-Node节点
+
+```Bash
+[root@linux-node1 ~]# salt-ssh 'linux-node4' state.highstate
+```
+
+5.5 这里依然可以使用`salt-ssh '*' state.highstate`的方式部署，但是这里会有一个BUG。
+
+```bash
+ [root@linux-node1 ~]# salt-ssh '*' state.highstate
+```
+ 此时node节点的flannel会启动失败，由于salt-ssh在执行的过程中会先执行node节点，导致flannel在生成flanneld.kubeconfig的时候无法写入user和tocken。此时只需要执行以下命令即可修复此BUG。
+
+```Bash
+[root@linux-node1 ~]# /bin/bash /opt/kubernetes/bin/flannelkubeconfig.sh
+```
 
 ## 6.测试Kubernetes安装
 

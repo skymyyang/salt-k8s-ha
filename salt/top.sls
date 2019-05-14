@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       Jason Zhao
-# Email:        shundong.zhao@linuxhot.com
-# Organization: http://www.devopsedu.com/
-# Description:  SaltStack Top File
+# Author:       skymyyang
+# Email:        yang-li@live.cn
+# Organization: skymyyyang.github.io
+# Description:  Kubernetes Master
 #******************************************
 
 base:
@@ -16,4 +16,3 @@ base:
   'etcd-role:node':
     - match: grain
     - k8s.etcd
-
