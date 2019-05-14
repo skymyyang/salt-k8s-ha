@@ -103,7 +103,7 @@ kubelet-bootstrap-rbac:
     - mode: 644
     - template: jinja
   cmd.run:
-    - name: /opt/kubernetes/bin/kubectl delete -f /opt/kubernetes/cfg/kubelet-bootstrap-rbac.yaml;/opt/kubernetes/bin/kubectl create -f /opt/kubernetes/cfg/kubelet-bootstrap-rbac.yaml
+    - name: /opt/kubernetes/bin/kubectl create -f /opt/kubernetes/cfg/kubelet-bootstrap-rbac.yaml
 
 #kubectl logs 来查看,但由于 API 权限,故需要建立一个 RBAC Role 来获取存取权限,这边在k8s-m1节点执行下面命令创建
 apiserver-to-kubelet-rbac:
@@ -115,7 +115,7 @@ apiserver-to-kubelet-rbac:
     - mode: 644
     - template: jinja
   cmd.run:
-    - name: /opt/kubernetes/bin/kubectl delete -f /opt/kubernetes/cfg/apiserver-to-kubelet-rbac.yaml;/opt/kubernetes/bin/kubectl create -f /opt/kubernetes/cfg/apiserver-to-kubelet-rbac.yaml
+    - name: /opt/kubernetes/bin/kubectl create -f /opt/kubernetes/cfg/apiserver-to-kubelet-rbac.yaml
 
 #--authentication-kubeconfig 和 --authorization-kubeconfig 参数指定的证书需要有创建 "subjectaccessreviews" 的权限
 kube-controller-manager-clusterrole:
