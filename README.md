@@ -312,6 +312,7 @@ VIP_IF: "ens32"
 
 ```Bash
 [root@linux-node1 ~]# /bin/bash /opt/kubernetes/bin/flannelkubeconfig.sh
+[root@linux-node1 ~]# systemctl restart flannel
 ```
 
 ## 6.测试Kubernetes安装
