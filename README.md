@@ -462,11 +462,13 @@ kube-proxy-zgg6t          1/1     Running   2          16h
         <td><a href="docs/nginx-install.md">2.Nginx部署</a></td>
         <td><a href="docs/ca-install.md">3.CA部署</a></td>
         <td><a href="docs/etcd-install.md">4.ETCD集群部署</a></td>
-        <td><a href="docs/">5.Master节点部署</a></td>
-        <td><a href="docs/">6.Node节点部署</a></td>
-        <td><a href="docs/">7.Flannel部署</a></td>
+        <td><a href="docs/master-install.md">5.Master节点部署</a></td>
+        <td><a href="docs/node-install">6.Node节点部署</a></td>
+        <td><a href="docs/flannel-install.md">7.Flannel部署</a></td>
     </tr>
 </table>
+
+插件安装请参考文档必备插件的部分。
 
 #### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
 

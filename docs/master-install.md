@@ -1,10 +1,12 @@
 ## 部署Kubernetes API服务部署
+
 ### 0.准备软件包
 ```
 [root@linux-node1 ~]# cd /usr/local/src/kubernetes
 [root@linux-node1 kubernetes]# cp server/bin/kube-apiserver /opt/kubernetes/bin/
 [root@linux-node1 kubernetes]# cp server/bin/kube-controller-manager /opt/kubernetes/bin/
 [root@linux-node1 kubernetes]# cp server/bin/kube-scheduler /opt/kubernetes/bin/
+[root@linux-node1 kubernetes]# cp server/bin/kubectl /opt/kubernetes/bin/
 ```
 
 ### 1.创建生成CSR的 JSON 配置文件
@@ -220,94 +222,23 @@ ETCDCTL_API=3 etcdctl \
     --key=/opt/kubernetes/ssl/etcd-key.pem \
     get /registry/ --prefix --keys-only
 ```
-## 部署Kubectl
+## 部署Kubectl命令行工具
 
-## 部署Controller Manager服务
-```
-[root@linux-node1 ~]# vim /usr/lib/systemd/system/kube-controller-manager.service
-[Unit]
-Description=Kubernetes Controller Manager
-Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+- kubectl 是 kubernetes 集群的命令行管理工具，kubectl 默认从 `~/.kube/config` 文件读取 kube-apiserver 地址、证书、用户名等信息，如果没有配置，执行 kubectl 命令时可能会出错.
+- 本文档只需要部署一次，生成的 kubeconfig 文件是通用的，可以拷贝到需要执行 kubeclt 命令的机器上。
+- 将Kubectl的二进制文件拷贝到/opt/kubernetes/bin 目录下。
 
-[Service]
-ExecStart=/opt/kubernetes/bin/kube-controller-manager \
-  --address=127.0.0.1 \
-  --master=http://127.0.0.1:8080 \
-  --allocate-node-cidrs=true \
-  --service-cluster-ip-range=10.1.0.0/16 \
-  --cluster-cidr=10.2.0.0/16 \
-  --cluster-name=kubernetes \
-  --cluster-signing-cert-file=/opt/kubernetes/ssl/ca.pem \
-  --cluster-signing-key-file=/opt/kubernetes/ssl/ca-key.pem \
-  --service-account-private-key-file=/opt/kubernetes/ssl/ca-key.pem \
-  --root-ca-file=/opt/kubernetes/ssl/ca.pem \
-  --leader-elect=true \
-  --v=2 \
-  --logtostderr=false \
-  --log-dir=/opt/kubernetes/log
+### 1. 创建 admin 证书和私钥
 
-Restart=on-failure
-RestartSec=5
+kubectl 与 apiserver https 安全端口通信，apiserver 对提供的证书进行认证和授权。
 
-[Install]
-WantedBy=multi-user.target
-```
+kubectl 作为集群的管理工具，需要被授予最高权限。这里创建具有最高权限的 admin 证书。
 
-### 3.启动Controller Manager
-```
-[root@linux-node1 ~]# systemctl daemon-reload
-[root@linux-node1 scripts]# systemctl enable kube-controller-manager
-[root@linux-node1 scripts]# systemctl start kube-controller-manager
-```
+创建证书签名请求
 
-## 4.查看服务状态
-```
-[root@linux-node1 scripts]# systemctl status kube-controller-manager
-```
-
-## 部署Kubernetes Scheduler
-```
-[root@linux-node1 ~]# vim /usr/lib/systemd/system/kube-scheduler.service
-[Unit]
-Description=Kubernetes Scheduler
-Documentation=https://github.com/GoogleCloudPlatform/kubernetes
-
-[Service]
-ExecStart=/opt/kubernetes/bin/kube-scheduler \
-  --address=127.0.0.1 \
-  --master=http://127.0.0.1:8080 \
-  --leader-elect=true \
-  --v=2 \
-  --logtostderr=false \
-  --log-dir=/opt/kubernetes/log
-
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### 2.部署服务
-```
-[root@linux-node1 ~]# systemctl daemon-reload
-[root@linux-node1 scripts]# systemctl enable kube-scheduler
-[root@linux-node1 scripts]# systemctl start kube-scheduler
-[root@linux-node1 scripts]# systemctl status kube-scheduler
-```
-
-## 部署kubectl 命令行工具
-
-1.准备二进制命令包
-```
-[root@linux-node1 ~]# cd /usr/local/src/kubernetes/client/bin
-[root@linux-node1 bin]# cp kubectl /opt/kubernetes/bin/
-```
-
-2.创建 admin 证书签名请求
-```
-[root@linux-node1 ~]# cd /usr/local/src/ssl/
-[root@linux-node1 ssl]# vim admin-csr.json
+```Bash
+cd /opt/kubernetes/ssl
+cat > admin-csr.json <<EOF
 {
   "CN": "admin",
   "hosts": [],
@@ -325,62 +256,378 @@ WantedBy=multi-user.target
     }
   ]
 }
+EOF
+```
+- O 为 system:masters，kube-apiserver 收到该证书后将请求的 Group 设置为 system:masters
+- 预定义的 ClusterRoleBinding cluster-admin 将 Group system:masters 与 Role cluster-admin 绑定，该 Role 授予所有 API的权限
+- 该证书只会被 kubectl 当做 client 证书使用，所以 hosts 字段为空
+
+生成证书和私钥:
+
+```Bash
+cd /opt/kubernetes/ssl
+/opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem \
+ -ca-key=/opt/kubernetes/ssl/ca-key.pem \
+ -config=/opt/kubernetes/ssl/ca-config.json \
+ -profile=kubernetes admin-csr.json | /opt/kubernetes/bin/cfssljson -bare admin
+ls admin*
+```
+创建 kubeconfig 文件
+
+kubeconfig 为 kubectl 的配置文件，包含访问 apiserver 的所有信息，如 apiserver 地址、CA 证书和自身使用的证书
+
+```Bash
+cd /opt/kubernetes/cfg
+# 设置集群参数
+/opt/kubernetes/bin/kubectl config set-cluster kubernetes \
+ --certificate-authority=/opt/kubernetes/ssl/ca.pem \
+ --embed-certs=true --server=https://127.0.0.1:8443 \
+ --kubeconfig=kubectl.kubeconfig
+ # 设置客户端认证参数
+/opt/kubernetes/bin/kubectl config set-credentials admin \
+ --client-certificate=/opt/kubernetes/ssl/admin.pem \
+ --embed-certs=true \
+ --client-key=/opt/kubernetes/ssl/admin-key.pem \
+ --kubeconfig=kubectl.kubeconfig
+ #设置上下文参数
+/opt/kubernetes/bin/kubectl config set-context kubernetes \
+ --cluster=kubernetes \
+ --user=admin \
+ --kubeconfig=kubectl.kubeconfig
+ #设置默认上下文
+/opt/kubernetes/bin/kubectl config use-context kubernetes \
+ --kubeconfig=kubectl.kubeconfig
+#分发 kubeconfig 文件
+mkdir -p ~/.kube && /bin/cp /opt/kubernetes/cfg/kubectl.kubeconfig ~/.kube/config
+```
+- --certificate-authority：验证 kube-apiserver 证书的根证书
+- --client-certificate、--client-key：刚生成的 admin 证书和私钥，连接 kube-apiserver 时使用
+- --embed-certs=true：将 ca.pem 和 admin.pem 证书内容嵌入到生成的 kubectl.kubeconfig 文件中(不加时，写入的是证书文件路径)
+
+
+## 部署Controller Manager服务
+- 该集群包含 3 个节点，启动后将通过竞争选举机制产生一个 leader 节点，其它节点为阻塞状态。当 leader 节点不可用后，剩余节点将再次进行选举产生新的 leader 节点，从而保证服务的可用性
+- 为保证通信安全，本文档先生成 x509 证书和私钥，kube-controller-manager 在如下两种情况下使用该证书
+
+1. 与 kube-apiserver 的安全端口通信时
+2. 在安全端口(https，10252) 输出 prometheus 格式的 metrics
+
+### 1.创建 kube-controller-manager 证书和私钥
+创建证书签名请求:
+```Bash
+{
+    "CN": "system:kube-controller-manager",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "hosts": [
+      "127.0.0.1",
+      "192.168.150.141",
+      "192.168.150.142",
+      "192.168.150.143"
+    ],
+    "names": [
+      {
+        "C": "CN",
+        "ST": "BeiJing",
+        "L": "BeiJing",
+        "O": "system:kube-controller-manager",
+        "OU": "System"
+      }
+    ]
+}
+```
+- hosts 列表包含所有 kube-controller-manager 节点 IP
+- CN 为 system:kube-controller-manager、O 为 system:kube-controller-manager，kubernetes 内置的 ClusterRoleBindings system:kube-controller-manager 赋予 kube-controller-manager 工作所需的权限
+
+生成证书和私钥:
+```Bash
+cd /opt/kubernetes/ssl
+/opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem \
+ -ca-key=/opt/kubernetes/ssl/ca-key.pem \
+ -config=/opt/kubernetes/ssl/ca-config.json \
+ -profile=kubernetes kube-controller-manager-csr.json | /opt/kubernetes/bin/cfssljson -bare kube-controller-manager
+
+ls kube-controller-manager*pem
+```
+将生成的证书和私钥分发到所有 master 节点:
+```Bash
+scp kube-controller-manager*.pem linux-node2:/opt/kubernetes/ssl/
+scp kube-controller-manager*.pem linux-node3:/opt/kubernetes/ssl/
+```
+### 2.创建和分发 kubeconfig 文件
+
+kubeconfig 文件包含访问 apiserver 的所有信息，如 apiserver 地址、CA 证书和自身使用的证书
+
+```Bash
+cd /opt/kubernetes/cfg
+/opt/kubernetes/bin/kubectl config set-cluster kubernetes \
+ --certificate-authority=/opt/kubernetes/ssl/ca.pem \
+ --embed-certs=true \
+ --server=https://127.0.0.1:8443 \
+ --kubeconfig=kube-controller-manager.kubeconfig
+
+/opt/kubernetes/bin/kubectl config set-credentials system:kube-controller-manager \
+ --client-certificate=/opt/kubernetes/ssl/kube-controller-manager.pem \
+ --embed-certs=true \
+ --client-key=/opt/kubernetes/ssl/kube-controller-manager-key.pem \
+ --kubeconfig=kube-controller-manager.kubeconfig
+
+/opt/kubernetes/bin/kubectl config set-context system:kube-controller-manager \
+ --cluster=kubernetes \
+ --user=system:kube-controller-manager \
+ --kubeconfig=kube-controller-manager.kubeconfig
+
+/opt/kubernetes/bin/kubectl config use-context system:kube-controller-manager \
+ --kubeconfig=kube-controller-manager.kubeconfig
+```
+分发 kubeconfig 到所有 master 节点:
+
+```Bash
+scp kube-controller-manager.kubeconfig linux-node2:/opt/kubernetes/cfg/
+scp kube-controller-manager.kubeconfig linux-node3:/opt/kubernetes/cfg/
+```
+### 3.创建和分发 kube-controller-manager systemd unit 文件
+```
+[root@linux-node1 ~]# vim /usr/lib/systemd/system/kube-controller-manager.service
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+
+[Service]
+ExecStart=/opt/kubernetes/bin/kube-controller-manager \
+  --address=127.0.0.1 \
+  --allocate-node-cidrs=true \
+  --authentication-kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
+  --authorization-kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
+  --kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
+  --service-cluster-ip-range=10.1.0.0/16 \
+  --cluster-cidr=10.2.0.0/16 \
+  --cluster-signing-cert-file=/opt/kubernetes/ssl/ca.pem \
+  --cluster-signing-key-file=/opt/kubernetes/ssl/ca-key.pem \
+  --root-ca-file=/opt/kubernetes/ssl/ca.pem \
+  --service-account-private-key-file=/opt/kubernetes/ssl/ca-key.pem \
+  --leader-elect=true \
+  --feature-gates=RotateKubeletServerCertificate=true \
+  --controllers=*,bootstrapsigner,tokencleaner \
+  --horizontal-pod-autoscaler-use-rest-clients=true \
+  --horizontal-pod-autoscaler-sync-period=10s \
+  --tls-cert-file=/opt/kubernetes/ssl/kube-controller-manager.pem \
+  --tls-private-key-file=/opt/kubernetes/ssl/kube-controller-manager-key.pem \
+  --use-service-account-credentials=true \
+  --logtostderr=true \
+  --v=2
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+- --port=0：关闭监听 http /metrics 的请求，同时 --address 参数无效，--bind-address 参数有效
+- --secure-port=10252、--bind-address=0.0.0.0: 在所有网络接口监听 10252 端口的 https /metrics 请求
+- --kubeconfig：指定 kubeconfig 文件路径，kube-controller-manager 使用它连接和验证 kube-apiserver
+- --authentication-kubeconfig 和 --authorization-kubeconfig：kube-controller-manager 使用它连接 apiserver，对 client 的请求进行认证和授权。kube-controller-manager 不再使用 --tls-ca-file 对请求 https metrics 的 Client 证书进行校验。如果没有配置这两个 kubeconfig 参数，则 client 连接 kube-controller-manager https 端口的请求会被拒绝(提示权限不足)。
+- --cluster-signing-*-file：签名 TLS Bootstrap 创建的证书
+- --experimental-cluster-signing-duration：指定 TLS Bootstrap 证书的有效期
+- --root-ca-file：放置到容器 ServiceAccount 中的 CA 证书，用来对 kube-apiserver 的证书进行校验
+- --service-account-private-key-file：签名 ServiceAccount 中 Token 的私钥文件，必须和 kube-apiserver 的 --service-account-key-file 指定的公钥文件配对使用
+- --service-cluster-ip-range ：指定 Service Cluster IP 网段，必须和 kube-apiserver 中的同名参数一致
+- --leader-elect=true：集群运行模式，启用选举功能；被选为 leader 的节点负责处理工作，其它节点为阻塞状态
+- --controllers=*,bootstrapsigner,tokencleaner：启用的控制器列表，tokencleaner 用于自动清理过期的 Bootstrap token；
+- --horizontal-pod-autoscaler-*：custom metrics 相关参数，支持 autoscaling/v2alpha1
+- --tls-cert-file、--tls-private-key-file：使用 https 输出 metrics 时使用的 Server 证书和秘钥
+- --use-service-account-credentials=true: kube-controller-manager 中各 controller 使用 serviceaccount 访问 kube-apiserver
+
+分发 systemd unit 文件到所有 master 节点
+
+```Bash
+scp /usr/lib/systemd/system/kube-controller-manager.service linux-node2:/usr/lib/systemd/system/
+scp /usr/lib/systemd/system/kube-controller-manager.service linux-node3:/usr/lib/systemd/system/
+```
+### 4.kube-controller-manager 的权限
+
+ClusteRole: system:kube-controller-manager 的权限很小，只能创建 secret、serviceaccount 等资源对象，各 controller 的权限分散到 ClusterRole system:controller:XXX 中
+
+需要在 kube-controller-manager 的启动参数中添加 --use-service-account-credentials=true 参数，这样 main controller 会为各 controller 创建对应的 ServiceAccount XXX-controller。
+
+内置的 ClusterRoleBinding system:controller:XXX 将赋予各 XXX-controller ServiceAccount 对应的 ClusterRole system:controller:XXX 权限。
+
+另外，--authentication-kubeconfig 和 --authorization-kubeconfig 参数指定的证书需要有创建 "subjectaccessreviews" 的权限，否则提示：
+
+```Bash
+$ curl --cacert /opt/k8s/work/ca.pem --cert /opt/k8s/work/admin.pem --key /opt/k8s/work/admin-key.pem https://127.0.0.1:10252/metrics
+
+Internal Server Error: "/metrics": subjectaccessreviews.authorization.k8s.io is forbidden: User "system:kube-controller-manager" cannot create resource "subjectaccessreviews" in API group "authorization.k8s.io" at the cluster scope
+```
+解决办法是创建一个 ClusterRoleBinding，赋予相应的权限
+
+```Bash
+$ kubectl create clusterrolebinding controller-manager:system:auth-delegator --user system:kube-controller-manager --clusterrole system:auth-delegator
+clusterrolebinding.rbac.authorization.k8s.io/controller-manager:system:auth-delegator created
+```
+参考：https://github.com/kubernetes/kubeadm/issues/1285
+### 5.启动Controller Manager
+```
+[root@linux-node1 ~]# systemctl daemon-reload
+[root@linux-node1 scripts]# systemctl enable kube-controller-manager
+[root@linux-node1 scripts]# systemctl start kube-controller-manager
 ```
 
-3.生成 admin 证书和私钥：
+### 6.查看服务状态
 ```
-[root@linux-node1 ssl]# cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem \
-   -ca-key=/opt/kubernetes/ssl/ca-key.pem \
-   -config=/opt/kubernetes/ssl/ca-config.json \
-   -profile=kubernetes admin-csr.json | cfssljson -bare admin
-[root@linux-node1 ssl]# ls -l admin*
--rw-r--r-- 1 root root 1009 Mar  5 12:29 admin.csr
--rw-r--r-- 1 root root  229 Mar  5 12:28 admin-csr.json
--rw------- 1 root root 1675 Mar  5 12:29 admin-key.pem
--rw-r--r-- 1 root root 1399 Mar  5 12:29 admin.pem
+[root@linux-node1]# systemctl status kube-controller-manager
+[root@linux-node1]# journalctl -u kube-controller-manager
 
-[root@linux-node1 src]# mv admin*.pem /opt/kubernetes/ssl/
 ```
 
-4.设置集群参数
+## 部署Kubernetes Scheduler
+
+- 该集群包含 3 个节点，启动后将通过竞争选举机制产生一个 leader 节点，其它节点为阻塞状态。当 leader 节点不可用后，剩余节点将再次进行选举产生新的 leader 节点，从而保证服务的可用性
+- 在安全端口(https，10251) 输出 prometheus 格式的 metrics
+- 与 kube-apiserver 的安全端口通信
+
+### 1.创建 kube-scheduler 证书和私钥
+
+创建证书签名请求:
+
+```Bash
+{
+    "CN": "system:kube-scheduler",
+    "hosts": [
+      "127.0.0.1",
+      "192.168.150.141",
+      "192.168.150.142",
+      "192.168.150.143"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+      {
+        "C": "CN",
+        "ST": "BeiJing",
+        "L": "BeiJing",
+        "O": "system:kube-scheduler",
+        "OU": "System"
+      }
+    ]
+}
 ```
-[root@linux-node1 src]# kubectl config set-cluster kubernetes \
-   --certificate-authority=/opt/kubernetes/ssl/ca.pem \
-   --embed-certs=true \
-   --server=https://192.168.56.11:6443
-Cluster "kubernetes" set.
+- hosts 列表包含所有 kube-scheduler 节点 IP
+- CN 为 system:kube-scheduler、O 为 system:kube-scheduler，kubernetes 内置的 ClusterRoleBindings system:kube-scheduler 将赋予 kube-scheduler 工作所需的权限.
+
+生成证书和私钥:
+
+```Bash
+cd /opt/kubernetes/ssl
+/opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem \
+ -ca-key=/opt/kubernetes/ssl/ca-key.pem \
+ -config=/opt/kubernetes/ssl/ca-config.json \
+ -profile=kubernetes kube-scheduler-csr.json | /opt/kubernetes/bin/cfssljson -bare kube-scheduler
+ls kube-scheduler*pem
+```
+### 2.创建和分发 kubeconfig 文件
+
+kubeconfig 文件包含访问 apiserver 的所有信息，如 apiserver 地址、CA 证书和自身使用的证书
+
+```Bash
+cd /opt/kubernetes/cfg
+/opt/kubernetes/bin/kubectl config set-cluster kubernetes \
+ --certificate-authority=/opt/kubernetes/ssl/ca.pem \
+ --embed-certs=true \
+ --server=https://127.0.0.1:8443 \
+ --kubeconfig=kube-scheduler.kubeconfig
+
+/opt/kubernetes/bin/kubectl config set-credentials system:kube-scheduler \
+ --client-certificate=/opt/kubernetes/ssl/kube-scheduler.pem \
+ --embed-certs=true \
+ --client-key=/opt/kubernetes/ssl/kube-scheduler-key.pem \
+ --kubeconfig=kube-scheduler.kubeconfig
+
+/opt/kubernetes/bin/kubectl config set-context system:kube-scheduler \
+ --cluster=kubernetes \
+ --user=system:kube-scheduler \
+ --kubeconfig=kube-scheduler.kubeconfig
+
+/opt/kubernetes/bin/kubectl config use-context system:kube-scheduler \
+ --kubeconfig=kube-scheduler.kubeconfig
+```
+- 上一步创建的证书、私钥以及 kube-apiserver 地址被写入到 kubeconfig 文件中
+
+分发 kubeconfig 到所有 master 节点:
+
+```Bash
+scp kube-scheduler.kubeconfig linux-node2:/opt/kubernetes/cfg/
+scp kube-scheduler.kubeconfig linux-node3:/opt/kubernetes/cfg/
+```
+### 3.创建和分发 kube-scheduler systemd unit 文件
+
+```
+[root@linux-node1 ~]# vim /usr/lib/systemd/system/kube-scheduler.service
+[Unit]
+Description=Kubernetes Scheduler
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+
+[Service]
+ExecStart=/opt/kubernetes/bin/kube-scheduler \
+  --leader-elect=true \
+  --address=127.0.0.1 \
+  --kubeconfig=/opt/kubernetes/cfg/kube-scheduler.kubeconfig \
+  --logtostderr=true \
+  --v=2
+Restart=always
+RestartSec=5
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target
+```
+- --kubeconfig：指定 kubeconfig 文件路径，kube-scheduler 使用它连接和验证 kube-apiserver
+- --leader-elect=true：集群运行模式，启用选举功能；被选为 leader 的节点负责处理工作，其它节点为阻塞状态
+
+### 4.启动 kube-scheduler 服务
+```Bash
+[root@linux-node1 ~]# systemctl daemon-reload
+[root@linux-node1 ~]# systemctl enable kube-scheduler
+[root@linux-node1 ~]# systemctl start kube-scheduler
+[root@linux-node1 ~]# systemctl status kube-scheduler
+[root@linux-node1 ~]# journalctl -u kube-scheduler
+```
+### 5.查看输出的 metric
+
+```Bash
+$ curl -s https://127.0.0.1:10251/metrics |head
+# HELP apiserver_audit_event_total Counter of audit events generated and sent to the audit backend.
+# TYPE apiserver_audit_event_total counter
+apiserver_audit_event_total 0
+# HELP go_gc_duration_seconds A summary of the GC invocation durations.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 9.7715e-05
+go_gc_duration_seconds{quantile="0.25"} 0.000107676
+go_gc_duration_seconds{quantile="0.5"} 0.00017868
+go_gc_duration_seconds{quantile="0.75"} 0.000262444
+go_gc_duration_seconds{quantile="1"} 0.001205223
 ```
 
-5.设置客户端认证参数
-```
-[root@linux-node1 src]# kubectl config set-credentials admin \
-   --client-certificate=/opt/kubernetes/ssl/admin.pem \
-   --embed-certs=true \
-   --client-key=/opt/kubernetes/ssl/admin-key.pem
-User "admin" set.
+### 6.测试 kube-scheduler 集群的高可用
+
+```Bash
+#随便找一个或两个 master 节点，停掉 kube-scheduler 服务，看其它节点是否获取了 leader 权限（systemd 日志）
+$ kubectl get endpoints kube-scheduler --namespace=kube-system  -o yaml
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    control-plane.alpha.kubernetes.io/leader: '{"holderIdentity":"m7-autocv-gpu01_7295c239-f2e9-11e8-8b5d-0cc47a2afc6a","leaseDurationSeconds":15,"acquireTime":"2018-11-28T08:41:50Z","renewTime":"2018-11-28T08:42:08Z","leaderTransitions":0}'
+  creationTimestamp: 2018-11-28T08:41:50Z
+  name: kube-scheduler
+  namespace: kube-system
+  resourceVersion: "1013"
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-scheduler
+  uid: 73305545-f2e9-11e8-b65b-0cc47a2afc6a
 ```
 
-6.设置上下文参数
-```
-[root@linux-node1 src]# kubectl config set-context kubernetes \
-   --cluster=kubernetes \
-   --user=admin
-Context "kubernetes" created.
-```
-
-7.设置默认上下文
-```
-[root@linux-node1 src]# kubectl config use-context kubernetes
-Switched to context "kubernetes".
-```
-
-8.使用kubectl工具
-```
-[root@linux-node1 ~]# kubectl get cs
-NAME                 STATUS    MESSAGE             ERROR
-controller-manager   Healthy   ok
-scheduler            Healthy   ok
-etcd-1               Healthy   {"health":"true"}
-etcd-2               Healthy   {"health":"true"}
-etcd-0               Healthy   {"health":"true"}
-```
+## 以上所有的步骤需要在Master上执行。如果需要master也参与集群节点。需要继续部署node节点上的服务。
