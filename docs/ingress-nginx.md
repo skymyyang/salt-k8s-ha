@@ -16,6 +16,7 @@
    5. No ClusterIP - Headless Service(无头服务)  `ServiceName-->PodIP`
 
 
+
 ## 关于Ingress Controller和Ingress
 
 - Ingress Controller通常是有用7层协议代理能力的控制器，自身也是运行与集群中的Pod资源对象。
@@ -45,19 +46,19 @@ kubectl apply -f /srv/addons/nginx-ingress/
 ## 验证
 
 ```bash
-[root@linux-node1 nginx-ingress]# kubectl -n ingress-nginx get po,svc
+[root@k8s-master01 nginx-ingress]# kubectl -n ingress-nginx get po,svc
 NAME                                            READY   STATUS    RESTARTS   AGE
-pod/default-http-backend-774686c976-t6c2c       1/1     Running   0          16h
-pod/nginx-ingress-controller-5784c99d57-nb7qr   1/1     Running   0          16h
+pod/default-http-backend-774686c976-m929c       1/1     Running   0          6m17s
+pod/nginx-ingress-controller-7fc9fc4457-9cvdd   1/1     Running   0          6m17s
+pod/nginx-ingress-controller-7fc9fc4457-gf76d   1/1     Running   0          6m17s
 
-NAME                           TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)                      AGE
-service/default-http-backend   ClusterIP      10.1.121.129   <none>            80/TCP                       16h
-service/ingress-nginx          LoadBalancer   10.1.159.223   192.168.150.252   80:36780/TCP,443:27505/TCP   16h
+NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/default-http-backend   ClusterIP   10.93.113.133   <none>        80/TCP    8m15s
 
-[root@linux-node1 nginx-ingress]# curl http://192.168.150.252
+[root@k8s-master01 ~]# curl http://10.93.113.133
 default backend - 404
 
-#确认上面步骤都沒问题后,就可以通过 kubeclt 建立简单 Myapp 来测试功能
+#确认上面步骤都沒问题后,就可以通过 kubeclt 建立简单 Myapp 来测试功能，此处可能需要先配置MetaILB
 [root@linux-node1 apps]# kubectl apply -f /srv/apps/myapp-http-svc.yaml
 pod/myapp unchanged
 service/myapp-service unchanged
@@ -66,3 +67,10 @@ ingress.extensions/myapp unchanged
 [root@linux-node1 apps]# curl http://192.168.150.252 -H 'Host: myapp.k8s.local'
 Hello MyApp | Version: v1 | <a href="hostname.html">Pod Name</a>
 ```
+
+## 关于Ingress service优化配置
+
+- 由于ingress-controller是集群对外暴露服务的一种方式。这里我们可以将他的cluster IP 设置为10.1.159.254 方便记忆和查找。
+- 如果service的externalTrafficPolicy为Local，那么只有service关联的pod所在的节点上才能通过nodeport访问。
+-  kubectl uncordon mastername  让master节点也参与调度。
+-  yaml文件中通过initContainers的方式优化nginx-ingress内核参数。
