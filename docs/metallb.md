@@ -14,7 +14,7 @@
   1. 地址分配：用户需要在配置中提供一个地址池，Metallb 将会在其中选取地址分配给服务。
   2. 地址广播：根据不同配置，Metallb 会以二层（ARP/NDP）或者 BGP 的方式进行地址的广播。
 
-![基本原理图](https://skymyyang.github.io/img/metallb.png)
+![基本原理图](images/metallb.png)
 
 ## 部署metallb负载均衡器
 

@@ -34,7 +34,7 @@
 2. 基于ingress的定义，生成Nginx所需的配置文件(/etc/nginx/nginx.conf)
 3. 执行nginx -s reload命令,重新加载nginx.conf配置文件的内容
 
-![基本原理图](https://skymyyang.github.io/img/ingress.png)
+![基本原理图](images/ingress.png)
 ## 部署
 
 ```bash
