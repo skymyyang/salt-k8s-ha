@@ -52,7 +52,7 @@ IP地址 | Hostname | 最小配置 | Kernel Version
 
 ## 案例架构图
 
-  ![架构图](https://skymyyang.github.io/img/k8s3.png)
+  ![架构图](images/k8s3.png)
 
 ## 0.系统初始化(必备)
 
@@ -123,7 +123,7 @@ sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 [root@linux-node1 ~]# yum install -y salt-ssh git unzip p7zip
 ```
 
-2.2 获取本项目 `1.13.5` 分支代码，并放置在 `/srv` 目录
+2.2 获取本项目 `master` 分支代码，并放置在 `/srv` 目录
 
 ```bash
 [root@linux-node1 ~]# git clone https://github.com/skymyyang/salt-k8s-ha.git
@@ -472,5 +472,5 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 
 #### 如果你觉得这个项目不错，欢迎各位打赏，你的打赏是对我们的认可，是我们的动力。
 
-![支付宝支付](https://skymyyang.github.io/img/zfb3.png)
-![微信支付](https://skymyyang.github.io/img/wx1.png)
+![支付宝支付](images/zfb.png)
+![微信支付](images/wx.png)
