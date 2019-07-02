@@ -94,6 +94,11 @@ systemctl start docker
 
 ```bash
 yum install kubelet-1.14.3 kubeadm-1.14.3 kubectl-1.14.3
+#配置kubelet，并启动，所有节点执行
+vim /etc/sysconfig/kubelet
+KUBELET_EXTRA_ARGS="--cgroup-driver=systemd --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1"
+systemctl enable kubelet
+systemctl start kubelet
 ```
 5. 安装ETCD
 
@@ -347,12 +352,18 @@ etcd-2               Healthy   {"health":"true"}
 
 - 1.设置SSH无密码登录，并且在 `/etc/hosts` 中继续增加对应的解析。确保所有节点都能解析。
 - 2.在 `/etc/salt/roster` 里面，增加对应的机器。
+- 3.安装docker以及kubeadm、kubelet、kubectl等
+- 4.配置docker以及kubelet的启动参数
 - 3.执行SaltStack状态
 
 ```
+#在master节点执行
 salt-ssh -L 'kubeadm-node-01' state.sls k8s.modules.base-dir
 salt-ssh -L 'kubeadm-node-01' state.sls k8s.modules.nginx
 systemctl status kube-nginx
+#在node节点上执行
 kubeadm join 127.0.0.1:8443 --token xa6317.1tyqmsnbt7wwhqfe \
     --discovery-token-ca-cert-hash sha256:52c45df8f04b675869ad60a42c76e997d6a0da806107aa6f2e4f2963efbc4485
+#以防止外部恶意的节点进入集群。每个token自生成起24小时后过期。届时如果需要加入新的节点，则需要重新生成新的join token，请使用下面的命令生成，在master上执行：
+kubeadm token create --print-join-command
 ```
