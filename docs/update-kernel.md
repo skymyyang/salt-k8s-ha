@@ -7,6 +7,12 @@ systemctl disable --now firewalld NetworkManager postfix
 setenforce 0
 sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 ```
+#### 关闭swap交换分区
+
+```bash
+swapoff -a && sysctl -w vm.swappiness=0
+sed -ri '/^[^#]*swap/s@^@#@' /etc/fstab
+```
 
 #### 如果是开启了GUI环境，建议关闭dnsmasq(可选)
 
@@ -39,7 +45,7 @@ systemctl enable --now chronyd
 ```
 
 
-#### 升级内核
+#### 升级内核，并配置saltstack阿里云的yum源。
 
 ```bash
 yum install wget git  jq psmisc vim -y
