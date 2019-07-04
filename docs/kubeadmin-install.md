@@ -68,6 +68,7 @@ yum install docker-ce-18.09.2
 2. 修改docker配置文件，所有节点执行。
 
 ```bash
+mkdir /etc/docker
 cat <<EOF > /etc/docker/daemon.json
 {
     "exec-opts": ["native.cgroupdriver=systemd"],
@@ -356,14 +357,30 @@ etcd-2               Healthy   {"health":"true"}
 - 4.配置docker以及kubelet的启动参数
 - 3.执行SaltStack状态
 
-```
+```bash
 #在master节点执行
+ssh-copy-id kubeadm-node-01
+scp /etc/hosts kubeadm-node-01:/etc/
 salt-ssh -L 'kubeadm-node-01' state.sls k8s.modules.base-dir
 salt-ssh -L 'kubeadm-node-01' state.sls k8s.modules.nginx
 systemctl status kube-nginx
 #在node节点上执行
+配置kubernetes阿里云的yum源
+安装docker
 kubeadm join 127.0.0.1:8443 --token xa6317.1tyqmsnbt7wwhqfe \
     --discovery-token-ca-cert-hash sha256:52c45df8f04b675869ad60a42c76e997d6a0da806107aa6f2e4f2963efbc4485
 #以防止外部恶意的节点进入集群。每个token自生成起24小时后过期。届时如果需要加入新的节点，则需要重新生成新的join token，请使用下面的命令生成，在master上执行：
 kubeadm token create --print-join-command
+```
+
+## 部署metrics-server
+
+`kubectl apply -f /srv/addons/metrics-server/metrics-server-kubeadm.yaml`
+
+由于kubeadm的安装方式跟二进制稍有区别,需要修改部门启动参数以及配置。主要增加的启动参数如下所示：
+```
+command:
+        - /metrics-server
+        - --kubelet-insecure-tls
+        - --kubelet-preferred-address-types=InternalDNS,InternalIP,ExternalDNS,ExternalIP,Hostname
 ```
