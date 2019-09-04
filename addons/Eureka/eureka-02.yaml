@@ -1,0 +1,88 @@
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: eureka
+  name: eureka-service
+  labels:
+    app: eureka-service
+spec:
+  ports:
+    - protocol: TCP
+      port: 8761
+      targetPort: 8761
+  selector:
+    app: pod-eureka-service
+  type: ClusterIP
+  clusterIP: None
+  sessionAffinity: ClientIP
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: eureka
+  name: service-eureka
+  labels:
+    app: service-eureka
+spec:
+  ports:
+    - protocol: TCP
+      port: 8761
+      targetPort: 8761
+      nodePort: 20001
+  selector:
+    app: pod-eureka-service
+  type: NodePort
+  sessionAffinity: ClientIP
+
+---
+kind: StatefulSet
+apiVersion: apps/v1beta2
+metadata:
+  namespace: eureka
+  name: statefulset-eureka-service-02
+  labels:
+    app: statefulset-eureka-service-02
+spec:
+  serviceName: eureka-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-eureka-service
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: pod-eureka-service
+    spec:
+
+      containers:
+        - image: harbor.mofangge.net/english_word/eureka-server:test
+          securityContext:
+            privileged: true
+          imagePullPolicy: IfNotPresent
+          name: container-apollo-config-server-dev
+          env:
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: "statefulset-eureka-service-02-0.eureka-service.eureka"
+            - name: JAVA_OPTS
+              value: "-Deureka.instance.preferIpAddress=false -Deureka.client.serviceUrl.defaultZone=http://statefulset-eureka-service-01-0.eureka-service.eureka:8761/eureka/"
+          ports:
+            - protocol: TCP
+              containerPort: 8761
+
+          readinessProbe:
+            tcpSocket:
+              port: 8761
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          livenessProbe:
+            tcpSocket:
+              port: 8761
+            initialDelaySeconds:  120
+            periodSeconds: 10
+
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
