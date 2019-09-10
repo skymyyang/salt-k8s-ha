@@ -106,3 +106,6 @@ kubectl delete -f /srv/addons/nginx-ingress/
 #然后应用一下文件
 kubectl apply -f /srv/addons/nginx-ingress-dm/
 ```
+
+PS:
+在不使用kubernetes支持的公有云平台下，默认的 ADDRESS地址会显示为空，如果需要显示节点的IP，可以添加--report-node-internal-ip-address=true的参数，或者修改flags.go z中的源码，对应的useNodeInternalIP = flags.Bool("report-node-internal-ip-address", false, 中 false 修改为 true。
