@@ -1,0 +1,85 @@
+#定义service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-service-internal
+  labels:
+    app: eureka-service-internal
+  namespace: eureka
+spec:
+  clusterIP: None
+  ports:
+  - port: 8761
+    protocol: TCP
+    targetPort: 8761
+  selector:
+    app: pod-eureka
+  type: ClusterIP
+
+#定义ingress供外网访问。
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: eureka.mofangge.cc
+  namespace: eureka
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+    - secretName: mofangge.cc-eureka
+      hosts:
+        - eureka.mofangge.cc
+  rules:
+    - host: eureka.mofangge.cc
+      http:
+        paths:
+        - backend:
+            serviceName: eureka-service-internal
+            servicePort: 8761
+#定义statefulset有状态应用
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: pod-eureka
+  namespace: eureka
+  labels:
+    app: pod-eureka
+spec:
+  serviceName: eureka-service-internal
+  replicas: 2
+  selector:
+    matchLabels:
+        app: pod-eureka
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: pod-eureka
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - image: harbor.mofangge.net/english_word/eureka-server:test
+          imagePullPolicy: IfNotPresent
+          name: pod-eureka
+          env:
+            - name: JAVA_OPTS
+              value: "-Deureka.instance.preferIpAddress=false -Deureka.client.serviceUrl.defaultZone=http://pod-eureka-0.eureka-service-internal.eureka:8761/eureka/,http://pod-eureka-1.eureka-service-internal.eureka:8761/eureka/"
+          ports:
+            - protocol: TCP
+              containerPort: 8761
+          readinessProbe:
+            tcpSocket:
+              port: 8761
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          livenessProbe:
+            tcpSocket:
+              port: 8761
+            initialDelaySeconds:  120
+            periodSeconds: 10
+      dnsPolicy: ClusterFirst
