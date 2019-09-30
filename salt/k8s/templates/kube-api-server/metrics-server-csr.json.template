@@ -1,5 +1,5 @@
 {
-  "CN": "aggregator",
+  "CN": "front-proxy-client",
   "hosts": [],
   "key": {
     "algo": "rsa",

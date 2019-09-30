@@ -4,27 +4,25 @@ Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 
 [Service]
 ExecStart=/opt/kubernetes/bin/kube-controller-manager \
-  --address=127.0.0.1 \
   --allocate-node-cidrs=true \
-  --authentication-kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
-  --authorization-kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
-  --kubeconfig=/opt/kubernetes/cfg/kube-controller-manager.kubeconfig \
+  --authentication-kubeconfig=/etc/kubernetes/controller-manager.conf \
+  --authorization-kubeconfig=/etc/kubernetes/controller-manager.conf \
+  --bind-address=127.0.0.1 \
+  --client-ca-file=/etc/kubernetes/pki/ca.pem
+  --cluster-cidr={{ CLUSTER_CIDR }} \
   --service-cluster-ip-range={{ SERVICE_CIDR }} \
-  --cluster-cidr={{ POD_CIDR }} \
-  --cluster-signing-cert-file=/opt/kubernetes/ssl/ca.pem \
-  --cluster-signing-key-file=/opt/kubernetes/ssl/ca-key.pem \
-  --root-ca-file=/opt/kubernetes/ssl/ca.pem \
-  --service-account-private-key-file=/opt/kubernetes/ssl/ca-key.pem \
-  --leader-elect=true \
-  --feature-gates=RotateKubeletServerCertificate=true \
+  --cluster-signing-cert-file=/etc/kubernetes/pki/ca.pem \
+  --cluster-signing-key-file=/etc/kubernetes/pki/ca-key.pem \
   --controllers=*,bootstrapsigner,tokencleaner \
-  --horizontal-pod-autoscaler-use-rest-clients=true \
-  --horizontal-pod-autoscaler-sync-period=10s \
-  --tls-cert-file=/opt/kubernetes/ssl/kube-controller-manager.pem \
-  --tls-private-key-file=/opt/kubernetes/ssl/kube-controller-manager-key.pem \
+  --kubeconfig=/etc/kubernetes/controller-manager.conf \
+  --leader-elect=true \
+  --node-cidr-mask-size=24 \
+  --requestheader-client-ca-file=/etc/kubernetes/pki/ca.pem \
+  --root-ca-file=/etc/kubernetes/pki/ca.pem \
+  --service-account-private-key-file=/etc/kubernetes/pki/ca-key.pem \
   --use-service-account-credentials=true \
-  --logtostderr=true \
-  --v=2
+  --horizontal-pod-autoscaler-use-rest-clients=true \
+  --horizontal-pod-autoscaler-sync-period=10s
 
 Restart=on-failure
 RestartSec=5

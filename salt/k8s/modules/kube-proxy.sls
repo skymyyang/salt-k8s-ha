@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # #******************************************
-# Author:       skymyyang
+# Author:       iokubernetes
 # Email:        yang-li@live.cn
-# Organization: https://www.cnblogs.com/skymyyang/
+# Organization: https://iokubernetes.github.io
 # # Description:  Kubernetes Proxy
 # #******************************************
 
-{% set k8s_version = "k8s-v1.13.5" %}
+{% set k8s_version = "k8s-v1.15.4" %}
 
 include:
   - k8s.modules.cni
@@ -43,7 +43,7 @@ kubeproxy-set-context:
 
 kubeproxy-use-context:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig && cp /opt/kubernetes/cfg/kube-proxy.kubeconfig /etc/kubernetes/kube-proxy.kubeconfig
 
 kube-proxy-bin:
   file.managed:
@@ -55,16 +55,14 @@ kube-proxy-bin:
 
 kube-proxy-config-yaml:
   file.managed:
-    - name: /opt/kubernetes/cfg/kube-proxy.config.yaml
+    - name: /etc/kubernetes/kube-proxy.config.yaml
     - source: salt://k8s/templates/kube-proxy/kube-proxy.config.yaml.template
     - user: root
     - group: root
     - mode: 644
     - template: jinja
     - defaults:
-        NODE_IP: {{ pillar['NODE_IP'] }}
-        HOST_NAME: {{ pillar['HOST_NAME'] }}
-        POD_CIDR: {{ pillar['POD_CIDR'] }}
+        CLUSTER_CIDR: {{ pillar['CLUSTER_CIDR'] }}
 
 
 kube-proxy-service:
@@ -75,6 +73,8 @@ kube-proxy-service:
     - group: root
     - mode: 644
     - template: jinja
+    - defaults:
+        HOST_NAME: {{ pillar['HOST_NAME'] }}
   cmd.run:
     - name: systemctl daemon-reload
   service.running:

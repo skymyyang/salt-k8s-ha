@@ -10,7 +10,7 @@ authentication:
     cacheTTL: 2m0s
     enabled: true
   x509:
-    clientCAFile: /opt/kubernetes/ssl/ca.pem
+    clientCAFile: /etc/kubernetes/pki/ca.pem
 authorization:
   mode: Webhook
   webhook:
@@ -21,7 +21,6 @@ cgroupsPerQOS: true
 clusterDNS:
 - {{ CLUSTER_DNS_SVC_IP }}
 clusterDomain: {{ CLUSTER_DNS_DOMAIN }}
-podCIDR: {{ POD_CIDR }}
 containerLogMaxFiles: 5
 containerLogMaxSize: 10Mi
 contentType: application/vnd.kubernetes.protobuf

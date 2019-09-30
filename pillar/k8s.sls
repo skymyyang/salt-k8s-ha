@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #********************************************
-# Author:       skymyyang
+# Author:       iokubernetes
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: iokubernetes.github.io
 # Description:  Kubernetes Config with Pillar
 #********************************************
 
@@ -37,19 +37,20 @@ TOKEN_SECRET: "da8a699a46edc482"
 ENCRYPTION_KEY: "8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA="
 
 #配置Service IP地址段
-SERVICE_CIDR: "10.1.0.0/16"
+SERVICE_CIDR: "10.96.0.0/16"
 
 #Kubernetes服务 IP (从 SERVICE_CIDR 中预分配)
-CLUSTER_KUBERNETES_SVC_IP: "10.1.0.1"
+CLUSTER_KUBERNETES_SVC_IP: "10.96.0.1"
 
 #Kubernetes DNS 服务 IP (从 SERVICE_CIDR 中预分配)
-CLUSTER_DNS_SVC_IP: "10.1.0.2"
+CLUSTER_DNS_SVC_IP: "10.96.0.2"
 
 #设置Node Port的端口范围
 NODE_PORT_RANGE: "20000-40000"
 
-#设置POD的IP地址段
-POD_CIDR: "10.2.0.0/16"
+#设置POD的IP地址段,在kube-controller-manager中定义cluster-cidr
+POD_CIDR: "10.244.0.0/16"
+CLUSTER_CIDR: "10.244.0.0/16"
 
 #设置集群的DNS域名
 CLUSTER_DNS_DOMAIN: "cluster.local."

@@ -6,7 +6,7 @@
 # Description:  Kubernetes Scheduler
 #******************************************
 
-{% set k8s_version = "k8s-v1.13.5" %}
+{% set k8s_version = "k8s-v1.15.4" %}
 
 
 kube-scheduler-csr-json:
@@ -45,7 +45,7 @@ kubectl-scheduler-context:
 
 kubectl-scheduler-use:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig && cp /opt/kubernetes/cfg/kube-scheduler.kubeconfig /etc/kubernetes/scheduler.conf
 
 kube-scheduler-service:
   file.managed:

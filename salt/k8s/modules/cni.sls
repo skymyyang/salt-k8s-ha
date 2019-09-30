@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       skymyyang
+# Author:       iokubernetes
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: iokubernetes.github.io
 # Description:  CNI For Kubernetes
 #******************************************
 {% set cni_version = "cni-plugins-amd64-v0.7.4" %}

@@ -5,10 +5,8 @@ Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 [Service]
 ExecStart=/opt/kubernetes/bin/kube-scheduler \
   --leader-elect=true \
-  --address=127.0.0.1 \
-  --kubeconfig=/opt/kubernetes/cfg/kube-scheduler.kubeconfig \
-  --logtostderr=true \
-  --v=2
+  --bind-address=127.0.0.1 \
+  --kubeconfig=/etc/kubernetes/scheduler.conf
 Restart=always
 RestartSec=5
 StartLimitInterval=0

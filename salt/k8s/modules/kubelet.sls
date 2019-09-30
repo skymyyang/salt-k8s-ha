@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       skymyyang
+# Author:       iokubernetes
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: iokubernetes.github.io
 # Description:  Kubernetes Node kubelet
 #******************************************
 
-{% set k8s_version = "k8s-v1.13.5" %}
+{% set k8s_version = "k8s-v1.15.4" %}
 
 
 include:
@@ -17,6 +17,10 @@ include:
 kubelet-workdir:
   file.directory:
     - name: /var/lib/kubelet
+kubelet-service-d:
+  file.directory:
+    - name: /usr/lib/systemd/system/kubelet.service.d
+    - mode: 755
 #创建 kubelet bootstrap kubeconfig 文件
 kubeconfig-set-cluster:
   cmd.run:
@@ -24,15 +28,15 @@ kubeconfig-set-cluster:
 
 kubeconfig-set-credentials:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-credentials tls-bootstrap-token-user --token={{ pillar['BOOTSTRAP_TOKEN'] }} --kubeconfig=kubelet-bootstrap.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-credentials kubelet-bootstrap --token={{ pillar['BOOTSTRAP_TOKEN'] }} --kubeconfig=kubelet-bootstrap.kubeconfig
 
 kubeconfig-set-context:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-context tls-bootstrap-token-user@kubernetes --cluster=kubernetes --user=tls-bootstrap-token-user --kubeconfig=kubelet-bootstrap.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-context kubelet-bootstrap@kubernetes --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=kubelet-bootstrap.kubeconfig
 
 kubeconfig-use-context:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context tls-bootstrap-token-user@kubernetes --kubeconfig=kubelet-bootstrap.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context kubelet-bootstrap@kubernetes --kubeconfig=kubelet-bootstrap.kubeconfig && cp /opt/kubernetes/cfg/kubelet-bootstrap.kubeconfig /etc/kubernetes/bootstrap-kubelet.conf
 
 kubelet-bin:
   file.managed:
@@ -41,9 +45,13 @@ kubelet-bin:
     - user: root
     - group: root
     - mode: 755
+kubelet-kubeadm-conf:
+  file.managed:
+    - name: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+    - source: salt://k8s/templates/kubelet/10-kubeadm.conf.template
 kubelet-config-yaml:
   file.managed:
-    - name: /opt/kubernetes/cfg/kubelet-conf.yaml
+    - name: /var/lib/kubelet/config.yaml
     - source: salt://k8s/templates/kubelet/kubelet-conf.yml.template
     - user: root
     - group: root
@@ -52,7 +60,6 @@ kubelet-config-yaml:
     - defaults:
         CLUSTER_DNS_SVC_IP: {{ pillar['CLUSTER_DNS_SVC_IP'] }}
         CLUSTER_DNS_DOMAIN: {{ pillar['CLUSTER_DNS_DOMAIN'] }}
-        POD_CIDR: {{ pillar['POD_CIDR'] }}
 kubelet-service:
   file.managed:
     - name: /usr/lib/systemd/system/kubelet.service
@@ -60,18 +67,18 @@ kubelet-service:
     - user: root
     - group: root
     - mode: 644
-    - template: jinja
-    {% if grains['fqdn'] == pillar['MASTER_H1']  %}
-    - ROLES: "master"
-    {% elif grains['fqdn'] == pillar['MASTER_H2'] %}
-    - ROLES: "master"
-    {% elif grains['fqdn'] == pillar['MASTER_H3'] %}
-    - ROLES: "master"
-    {% else %}
-    - ROLES: "node"
-    {% endif %}
-    - defaults:
-        HOST_NAME: {{ grains['fqdn'] }}
+    # - template: jinja
+    # {% if grains['fqdn'] == pillar['MASTER_H1']  %}
+    # - ROLES: "master"
+    # {% elif grains['fqdn'] == pillar['MASTER_H2'] %}
+    # - ROLES: "master"
+    # {% elif grains['fqdn'] == pillar['MASTER_H3'] %}
+    # - ROLES: "master"
+    # {% else %}
+    # - ROLES: "node"
+    # {% endif %}
+    # - defaults:
+    #     HOST_NAME: {{ grains['fqdn'] }}
 
   cmd.run:
     - name: systemctl daemon-reload

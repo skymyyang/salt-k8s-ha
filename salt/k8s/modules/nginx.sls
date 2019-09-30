@@ -5,7 +5,8 @@
 # Organization: https://www.cnblogs.com/skymyyang/
 # Description:  Nginx Install
 #******************************************
-{% set nginx_version = "nginx-1.15.3" %}
+#nginx使用stable版本
+{% set nginx_version = "nginx-1.16.1" %}
 
 
 include:

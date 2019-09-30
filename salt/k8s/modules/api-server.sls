@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       skymyyang
+# Author:       iokubernetes
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: iokubernetes.github.io
 # Description:  Kubernetes API Server
 #******************************************
 
-{% set k8s_version = "k8s-v1.13.5" %}
+{% set k8s_version = "k8s-v1.15.4" %}
 
 include:
   - k8s.modules.kubectl
 
-
+#生产apiserver-kubelet-client相关证书和key
 kube-api-server-csr-json:
   file.managed:
     - name: /opt/kubernetes/ssl/kubernetes-csr.json
@@ -26,8 +26,8 @@ kube-api-server-csr-json:
         MASTER_IP_M3: {{ pillar['MASTER_IP_M3'] }}
         CLUSTER_KUBERNETES_SVC_IP: {{ pillar['CLUSTER_KUBERNETES_SVC_IP'] }}
   cmd.run:
-    - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes kubernetes-csr.json | /opt/kubernetes/bin/cfssljson -bare kubernetes
-    - unless: test -f /opt/kubernetes/ssl/kubernetes.pem
+    - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes kubernetes-csr.json | /opt/kubernetes/bin/cfssljson -bare apiserver-kubelet-client
+    - unless: test -f /opt/kubernetes/ssl/apiserver-kubelet-client.pem
 
 metrics-server-csr-json:
   file.managed:
@@ -40,6 +40,11 @@ metrics-server-csr-json:
   cmd.run:
     - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes metrics-server-csr.json | /opt/kubernetes/bin/cfssljson -bare metrics-server
     - unless: test -f /opt/kubernetes/ssl/metrics-server.pem
+#将生成的秘钥拷贝到/etc/kubernetes/pki目录下
+pki-key:
+  cmd.run:
+    - name: cp /opt/kubernetes/ssl/apiserver-kubelet-client.pem /etc/kubernetes/pki/ && cp /opt/kubernetes/ssl/apiserver-kubelet-client-key.pem /etc/kubernetes/pki/ && cp /opt/kubernetes/ssl/metrics-server.pem /etc/kubernetes/pki/front-proxy-client.pem && cp /opt/kubernetes/ssl/metrics-server-key.pem /etc/kubernetes/pki/front-proxy-client-key.pem
+    - unless: test -f /etc/kubernetes/pki/front-proxy-client-key.pem
 api-auth-encryption-config:
   file.managed:
     - name: /opt/kubernetes/ssl/encryption-config.yaml
@@ -50,6 +55,14 @@ api-auth-encryption-config:
     - template: jinja
     - defaults:
         ENCRYPTION_KEY: {{ pillar['ENCRYPTION_KEY'] }}
+#审计策略文件
+kube-apiserver-audit-yaml:
+  file.managed:
+    - name: /etc/kubernetes/audit-policy.yaml
+    - source: salt://k8s/templates/kube-api-server/audit-policy.yml.template
+    - user: root
+    - group: root
+    - mode: 644
 kube-apiserver-bin:
   file.managed:
     - name: /opt/kubernetes/bin/kube-apiserver

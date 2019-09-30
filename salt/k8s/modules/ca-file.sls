@@ -16,7 +16,13 @@ ca-pem:
     - user: root
     - group: root
     - mode: 644
-
+ca-pem-pki:
+  file.managed:
+    - name: /etc/kubernetes/pki/ca.pem
+    - source: salt://k8s/templates/ca/ca.pem
+    - user: root
+    - group: root
+    - mode: 644
 ca-key-pem:
   file.managed:
     - name: /opt/kubernetes/ssl/ca-key.pem
@@ -24,7 +30,13 @@ ca-key-pem:
     - user: root
     - group: root
     - mode: 644
-
+ca-key-pem-pki:
+  file.managed:
+    - name: /etc/kubernetes/pki/ca-key.pem
+    - source: salt://k8s/templates/ca/ca-key.pem
+    - user: root
+    - group: root
+    - mode: 644
 ca-csr:
   file.managed:
     - name: /opt/kubernetes/ssl/ca.csr

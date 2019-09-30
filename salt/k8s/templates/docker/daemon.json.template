@@ -1,6 +1,7 @@
 {
     "exec-opts": ["native.cgroupdriver=systemd"],
 		"bip": "169.254.123.1/24",
+    "oom-score-adjust": -1000,
 		"registry-mirrors": ["https://fz5yth0r.mirror.aliyuncs.com"],
 	  "storage-driver": "overlay2",
       "storage-opts": [

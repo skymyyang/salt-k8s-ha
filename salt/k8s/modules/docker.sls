@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       skymyyang
+# Author:       iokubernetes
 # Email:        yang-li@live.cn
-# Organization: https://www.cnblogs.com/skymyyang/
+# Organization: iokubernetes.github.io
 # Description:  Docker Install
 #******************************************
 

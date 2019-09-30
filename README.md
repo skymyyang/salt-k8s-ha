@@ -1,18 +1,18 @@
 # SaltStack自动化部署HA-Kubernetes
 - 本项目在GitHub上，会不定期更新，大家也可以提交ISSUE，地址为：`https://github.com/skymyyang/salt-k8s-ha`
-- SaltStack自动化部署Kubernetes v1.13.5版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
+- SaltStack自动化部署Kubernetes v1.15.4版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
 
 
-## 版本明细：Release-v1.13.5
+## 版本明细：Release-v1.15.4
 - 测试通过系统：CentOS 7.6
 - Kernel Version: 4.18.16-1.el7.elrepo.x86_64
 - salt-ssh:     salt-ssh 2019.2.0-1
-- Kubernetes：  v1.13.5
+- Kubernetes：  v1.15.5
 - Etcd:         v3.3.13
 - Docker-ce:       v18.09.2
 - Flannel：     v0.11.0
 - CNI-Plugins： v0.7.4
-- nginx:        v1.15.3
+- nginx:        v1.16.1
 
 建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。以下是最小配置，否则可能不成功。
 
@@ -27,7 +27,7 @@ IP地址 | Hostname | 最小配置 | Kernel Version
 1. 使用Salt Grains进行角色定义，增加灵活性。
 2. 使用Salt Pillar进行配置项管理，保证安全性。
 3. 使用Salt SSH执行状态，不需要安装Agent，保证通用性。
-4. 使用Kubernetes当前稳定版本v1.13.5，保证稳定性。
+4. 使用Kubernetes当前稳定版本v1.15.4，保证稳定性。
 5. 使用nginx来保证集群的高可用。
 6. KeepAlive+VIP的形式完成高可用的缺点
     - 受限于使用者的网络，无法适用于SDN网络，比如Aliyun的VPC
@@ -133,23 +133,23 @@ sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 [root@linux-node1 srv]# /bin/cp /srv/master /etc/salt/master
 ```
 
-2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.13.5-auto.7z` 。
+2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.15.4-auto.7z` 。
 下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压，注意是 `files` 目录在 `/srv/salt/k8s/`目录下。
 Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1aIfj-8Zo26bPo_3cXFhkXA `
 提取码：`xwjh`
 
 ```bash
 [root@linux-node1 ~]# cd /srv/salt/k8s/
-[root@linux-node1 k8s]# 7za x k8s-v1.13.5-auto.7z -r -o./
-[root@linux-node1 k8s]# rm -f k8s-v1.13.5-auto.7z
+[root@linux-node1 k8s]# 7za x k8s-v1.15.4-auto.7z -r -o./
+[root@linux-node1 k8s]# rm -f k8s-v1.15.4-auto.7z
 [root@linux-node1 k8s]# ls -l files/
 total 0
 drwx------ 2 root root  94 Mar 18 13:41 cfssl-1.2
 drwx------ 2 root root 195 Mar 18 13:41 cni-plugins-amd64-v0.7.4
 drwx------ 3 root root 123 Mar 18 13:41 etcd-v3.3.13-linux-amd64
 drwx------ 2 root root  47 Mar 18 13:41 flannel-v0.11.0-linux-amd64
-drwx------ 3 root root  17 Mar 18 13:41 k8s-v1.13.5
-drwx------ 2 root root  33 Mar 18 20:17 nginx-1.15.3
+drwx------ 3 root root  17 Mar 18 13:41 k8s-v1.15.4
+drwx------ 2 root root  33 Mar 18 20:17 nginx-1.16.1
 ```
 
 ## 3.Salt SSH管理的机器以及角色分配

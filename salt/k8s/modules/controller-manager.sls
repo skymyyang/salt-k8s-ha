@@ -5,7 +5,7 @@
 # Organization: skymyyyang.github.io
 # Description:  Kubernetes Controller Manager
 #********************************************
-{% set k8s_version = "k8s-v1.13.5" %}
+{% set k8s_version = "k8s-v1.15.4" %}
 
 
 
@@ -49,7 +49,7 @@ kubectl-controller-manager-context:
 
 kubectl-controller-manager-use:
   cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig
+    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig && cp /opt/kubernetes/cfg/kube-controller-manager.kubeconfig /etc/kubernetes/controller-manager.conf
 
 
 kube-controller-manager-service:
@@ -62,7 +62,7 @@ kube-controller-manager-service:
     - template: jinja
     - defaults:
         SERVICE_CIDR: {{ pillar['SERVICE_CIDR'] }}
-        POD_CIDR: {{ pillar['POD_CIDR'] }}
+        CLUSTER_CIDR: {{ pillar['CLUSTER_CIDR'] }}
   cmd.run:
     - name: systemctl daemon-reload
   service.running:
