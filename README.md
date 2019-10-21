@@ -18,10 +18,10 @@
 
 IP地址 | Hostname | 最小配置 | Kernel Version
 ---|--- | --- | --- |
-192.168.150.141 | linux-node1 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
-192.168.150.142 | linux-node2 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
-192.168.150.143 | linux-node3 | Centos7.6 2G 2CPU | 4.18.16-1.el7.elrepo.x86_64
-192.168.150.144 | linux-node4 | Centos7.6 1G 1CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.200.181 | linux-node1 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.200.182 | linux-node2 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.200.183 | linux-node3 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.200.184 | linux-node4 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
 
 ## 架构介绍
 1. 使用Salt Grains进行角色定义，增加灵活性。
@@ -78,10 +78,10 @@ linux-node4
 [root@linux-node1 ~]# cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-192.168.150.141 linux-node1
-192.168.150.142 linux-node2
-192.168.150.143 linux-node3
-192.168.150.144 linux-node4
+192.168.200.181 linux-node1
+192.168.200.182 linux-node2
+192.168.200.183 linux-node3
+192.168.200.184 linux-node4
 ```
 
 3. 关闭SELinux和防火墙以及NetworkManager
@@ -163,7 +163,7 @@ drwx------ 2 root root  33 Mar 18 20:17 nginx-1.16.1
 ```Yaml
 
 linux-node1:
-  host: 192.168.150.141
+  host: 192.168.200.181
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -173,7 +173,7 @@ linux-node1:
       etcd-name: etcd-node1
 
 linux-node2:
-  host: 192.168.150.142
+  host: 192.168.200.182
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -183,7 +183,7 @@ linux-node2:
       etcd-name: etcd-node2
 
 linux-node3:
-  host: 192.168.150.143
+  host: 192.168.200.183
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -193,7 +193,7 @@ linux-node3:
       etcd-name: etcd-node3
 
 linux-node4:
-  host: 192.168.150.144
+  host: 192.168.200.184
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -205,9 +205,9 @@ linux-node4:
 ```bash
 [root@k8s-m1 ~]# vim /srv/pillar/k8s.sls
 #设置Master的IP地址(必须修改)
-MASTER_IP_M1: "192.168.150.141"
-MASTER_IP_M2: "192.168.150.142"
-MASTER_IP_M3: "192.168.150.143"
+MASTER_IP_M1: "192.168.200.181"
+MASTER_IP_M2: "192.168.200.182"
+MASTER_IP_M3: "192.168.200.183"
 #设置Master的HOSTNAME完整的FQDN名称(必须修改)
 MASTER_H1: "linux-node1"
 MASTER_H2: "linux-node2"
@@ -217,12 +217,12 @@ MASTER_H3: "linux-node3"
 KUBE_APISERVER: "https://127.0.0.1:8443"
 
 #设置ETCD集群访问地址（必须修改）
-ETCD_ENDPOINTS: "http://192.168.150.141:2379,http://192.168.150.142:2379,http://192.168.150.143:2379"
+ETCD_ENDPOINTS: "http://192.168.200.181:2379,http://192.168.200.182:2379,http://192.168.200.183:2379"
 
 FLANNEL_ETCD_PREFIX: "/kubernetes/network"
 
 #设置ETCD集群初始化列表（必须修改）
-ETCD_CLUSTER: "etcd-node1=http://192.168.150.141:2380,etcd-node2=http://192.168.150.142:2380,etcd-node3=http://192.168.150.143:2380"
+ETCD_CLUSTER: "etcd-node1=http://192.168.200.181:2380,etcd-node2=http://192.168.200.182:2380,etcd-node3=http://192.168.200.183:2380"
 
 #通过Grains FQDN自动获取本机IP地址，请注意保证主机名解析到本机IP地址
 NODE_IP: {{ grains['fqdn_ip4'][0] }}
@@ -235,31 +235,26 @@ TOKEN_SECRET: "da8a699a46edc482"
 ENCRYPTION_KEY: "8eVtmpUpYjMvH8wKZtKCwQPqYRqM14yvtXPLJdhu0gA="
 
 #配置Service IP地址段
-SERVICE_CIDR: "10.1.0.0/16"
+SERVICE_CIDR: "10.96.0.0/16"
 
 #Kubernetes服务 IP (从 SERVICE_CIDR 中预分配)
-CLUSTER_KUBERNETES_SVC_IP: "10.1.0.1"
+CLUSTER_KUBERNETES_SVC_IP: "10.96.0.1"
 
 #Kubernetes DNS 服务 IP (从 SERVICE_CIDR 中预分配)
-CLUSTER_DNS_SVC_IP: "10.1.0.2"
+CLUSTER_DNS_SVC_IP: "10.96.0.2"
 
-#设置Node Port的端口范围
-NODE_PORT_RANGE: "20000-40000"
+#设置Node Port的端口范围,已修改为默认配置,可自己自定义
+NODE_PORT_RANGE: "30000-32767"
 
 #设置POD的IP地址段
-POD_CIDR: "10.2.0.0/16"
+POD_CIDR: "10.244.0.0/16"
+CLUSTER_CIDR: "10.244.0.0/16"
 
 #设置集群的DNS域名
 CLUSTER_DNS_DOMAIN: "cluster.local."
 
-#设置Docker Registry地址
-#DOCKER_REGISTRY: "https://192.168.150.135:5000"
-
-#设置Master的VIP地址(必须修改)
-MASTER_VIP: "192.168.150.253"
-
 #设置网卡名称
-VIP_IF: "ens32"
+VIP_IF: "eth0"
 
 ```
 
@@ -320,10 +315,10 @@ VIP_IF: "ens32"
 ```bash
 #先验证etcd
 [root@linux-node1 ~]# source /etc/profile
-[root@linux-node1 ~]# etcdctl --endpoints=http://192.168.150.141:2379 cluster-health
-member 937f18b4916f332b is healthy: got healthy result from http://192.168.150.143:2379
-member d882a8adbfbb5755 is healthy: got healthy result from http://192.168.150.142:2379
-member eae26a25cb42d19f is healthy: got healthy result from http://192.168.150.141:2379
+[root@linux-node1 ~]# etcdctl --endpoints=http://192.168.200.181:2379 cluster-health
+member 937f18b4916f332b is healthy: got healthy result from http://192.168.200.181:2379
+member d882a8adbfbb5755 is healthy: got healthy result from http://192.168.200.182:2379
+member eae26a25cb42d19f is healthy: got healthy result from http://192.168.200.183:2379
 cluster is healthy
 [root@linux-node1 ~]# etcdctl --endpoints=http://192.168.150.141:2379 member list
 937f18b4916f332b: name=etcd-node3 peerURLs=http://192.168.150.143:2380 clientURLs=http://192.168.150.143:2379 isLeader=false
