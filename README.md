@@ -135,8 +135,9 @@ sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 
 2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.15.4-auto.7z` 。
 下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压，注意是 `files` 目录在 `/srv/salt/k8s/`目录下。
-Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1aIfj-8Zo26bPo_3cXFhkXA `
-提取码：`xwjh`
+Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1I_3PI8gsY1lvfd96zn7Zsg&shfl=sharepset`
+提取码：`lfwq`
+
 
 ```bash
 [root@linux-node1 ~]# cd /srv/salt/k8s/
@@ -309,7 +310,16 @@ VIP_IF: "eth0"
 [root@linux-node1 ~]# /bin/bash /opt/kubernetes/bin/flannelkubeconfig.sh
 [root@linux-node1 ~]# systemctl restart flannel
 ```
+5.6 安装过程中没有设置每个节点的roles,这里我们进行手动设置
 
+```bash
+#在master节点上执行
+/opt/kubernetes/bin/kubectl label node linux-node1 node-role.kubernetes.io/master=""
+/opt/kubernetes/bin/kubectl label node linux-node2 node-role.kubernetes.io/master=""
+/opt/kubernetes/bin/kubectl label node linux-node3 node-role.kubernetes.io/master=""
+#在node节点上执行
+kubectl label node linux-node4 node-role.kubernetes.io/worker=worker
+```
 ## 6.测试Kubernetes安装
 
 ```bash
@@ -320,10 +330,10 @@ member 937f18b4916f332b is healthy: got healthy result from http://192.168.200.1
 member d882a8adbfbb5755 is healthy: got healthy result from http://192.168.200.182:2379
 member eae26a25cb42d19f is healthy: got healthy result from http://192.168.200.183:2379
 cluster is healthy
-[root@linux-node1 ~]# etcdctl --endpoints=http://192.168.150.141:2379 member list
-937f18b4916f332b: name=etcd-node3 peerURLs=http://192.168.150.143:2380 clientURLs=http://192.168.150.143:2379 isLeader=false
-d882a8adbfbb5755: name=etcd-node2 peerURLs=http://192.168.150.142:2380 clientURLs=http://192.168.150.142:2379 isLeader=false
-eae26a25cb42d19f: name=etcd-node1 peerURLs=http://192.168.150.141:2380 clientURLs=http://192.168.150.141:2379 isLeader=true
+[root@linux-node1 ~]# etcdctl --endpoints=http://192.168.200.181:2379 member list
+1b59c715892a07: name=etcd-node3 peerURLs=http://192.168.200.183:2380 clientURLs=http://192.168.200.183:2379 isLeader=false
+5a23180c9f872e86: name=etcd-node2 peerURLs=http://192.168.200.182:2380 clientURLs=http://192.168.200.182:2379 isLeader=false
+edf2d8c54db4c5e1: name=etcd-node1 peerURLs=http://192.168.200.181:2380 clientURLs=http://192.168.200.181:2379 isLeader=true
 [root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
 controller-manager   Healthy   ok
@@ -333,10 +343,10 @@ etcd-1               Healthy   {"health":"true"}
 etcd-0               Healthy   {"health":"true"}
 [root@linux-node1 ~]# kubectl get node
 NAME          STATUS   ROLES    AGE     VERSION
-linux-node1   Ready    master   3h12m   v1.13.5
-linux-node2   Ready    master   3h12m   v1.13.5
-linux-node3   Ready    master   3h13m   v1.13.5
-linux-node4   Ready    node     3h14m   v1.13.5
+linux-node1   Ready    master   3h12m   v1.15.4
+linux-node2   Ready    master   3h12m   v1.15.4
+linux-node3   Ready    master   3h13m   v1.15.4
+linux-node4   Ready    node     3h14m   v1.15.4
 ```
 ## 7.测试Kubernetes集群和Flannel网络
 
@@ -346,12 +356,12 @@ deployment.apps/nginx created
 需要等待拉取镜像，可能稍有的慢，请等待。
 [root@linux-node1 ~]# kubectl get pod -o wide
 NAME                     READY   STATUS    RESTARTS   AGE   IP         NODE          NOMINATED NODE   READINESS GATES
-nginx-54458cd494-zp9zp   1/1     Running   0          69s   10.2.1.2   linux-node3   <none>           <none>
+nginx-54458cd494-zp9zp   1/1     Running   0          69s   10.244.2.2   linux-node3   <none>           <none>
 
 
 
 测试联通性
-[root@linux-node1 ~]# ping -c 1 10.2.1.2
+[root@linux-node1 ~]# ping -c 1 10.244.2.2
 PING 10.2.1.2 (10.2.1.2) 56(84) bytes of data.
 64 bytes from 10.2.1.2: icmp_seq=1 ttl=61 time=0.729 ms
 
@@ -359,7 +369,7 @@ PING 10.2.1.2 (10.2.1.2) 56(84) bytes of data.
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
 rtt min/avg/max/mdev = 0.729/0.729/0.729/0.000 ms
 
-[root@linux-node1 ~]# curl --head http://10.2.1.2
+[root@linux-node1 ~]# curl --head http://10.244.2.2
 HTTP/1.1 200 OK
 Server: nginx/1.15.9
 Date: Tue, 19 Mar 2019 05:36:47 GMT
@@ -388,7 +398,7 @@ nginx-54458cd494-zp9zp   1/1     Running   0          3m57s
 ```Bash
 [root@linux-node5 ~]# vim /etc/salt/roster
 linux-node5:
-  host: 192.168.150.145
+  host: 192.168.200.185
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
