@@ -5,7 +5,7 @@ After=network.target
 [Service]
 WorkingDirectory=/var/lib/kube-proxy
 ExecStart=/opt/kubernetes/bin/kube-proxy \
-  --config=/etc/kubernetes/kube-proxy.config.yaml
+  --config=/etc/kubernetes/kube-proxy.config.yaml \
   --hostname-override={{ HOST_NAME }}
 
 Restart=on-failure

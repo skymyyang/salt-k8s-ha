@@ -49,6 +49,12 @@ kubelet-kubeadm-conf:
   file.managed:
     - name: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
     - source: salt://k8s/templates/kubelet/10-kubeadm.conf.template
+    - user: root
+    - group: root
+    - mode: 755
+    - template: jinja
+    - defaults:
+        HOST_NAME: {{ pillar['HOST_NAME'] }}
 kubelet-config-yaml:
   file.managed:
     - name: /var/lib/kubelet/config.yaml

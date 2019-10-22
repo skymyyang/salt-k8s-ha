@@ -18,6 +18,10 @@ journald-conf:
 kubernetes-dir:
   file.directory:
     - name: /opt/kubernetes
+
+kubernetes-etc-dir:
+  file.directory:
+    - name: /etc/kubernetes
 #定义高可用nginx的配置
 nginx-dir:
   file.directory:

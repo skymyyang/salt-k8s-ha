@@ -7,7 +7,7 @@
 - 测试通过系统：CentOS 7.6
 - Kernel Version: 4.18.16-1.el7.elrepo.x86_64
 - salt-ssh:     salt-ssh 2019.2.0-1
-- Kubernetes：  v1.15.5
+- Kubernetes：  v1.15.4
 - Etcd:         v3.3.13
 - Docker-ce:       v18.09.2
 - Flannel：     v0.11.0
@@ -52,7 +52,7 @@ IP地址 | Hostname | 最小配置 | Kernel Version
 
 ## 案例架构图
 
-  ![架构图](images/k8s3.png)
+  ![架构图](images/k8s4.png)
 
 ## 0.系统初始化(必备)
 
