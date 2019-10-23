@@ -2,22 +2,23 @@
 #******************************************
 # Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: skymyyyang.github.io
+# Organization: iokubernetes.github.io
 # Description:  Salt SSH Roster
 #******************************************
 
 linux-node1:
-  host: 192.168.150.141
+  host: 192.168.200.181
   user: root
   priv: /root/.ssh/id_rsa
-  minion_opts: 
+  minion_opts:
     grains:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
+      admin-role: master
 
 linux-node2:
-  host: 192.168.150.142
+  host: 192.168.200.182
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -27,7 +28,7 @@ linux-node2:
       etcd-name: etcd-node2
 
 linux-node3:
-  host: 192.168.150.143
+  host: 192.168.200.183
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:
@@ -37,7 +38,7 @@ linux-node3:
       etcd-name: etcd-node3
 
 linux-node4:
-  host: 192.168.150.144
+  host: 192.168.200.184
   user: root
   priv: /root/.ssh/id_rsa
   minion_opts:

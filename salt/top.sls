@@ -16,3 +16,6 @@ base:
   'etcd-role:node':
     - match: grain
     - k8s.etcd
+  'admin-role:master':
+    - match: grain
+    - k8s.admin
