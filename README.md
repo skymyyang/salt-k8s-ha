@@ -305,13 +305,16 @@ VIP_IF: "eth0"
 [root@linux-node1 ~]# salt-ssh 'linux-node4' state.highstate
 ```
 
-5.6 安装过程中没有设置每个节点的roles,这里我们进行手动设置
+5.6 设置每个节点的roles
 
 ```bash
-#在master节点上执行
+#在master节点上执行,并为master节点加上污点Taint
 /opt/kubernetes/bin/kubectl label node linux-node1 node-role.kubernetes.io/master=""
 /opt/kubernetes/bin/kubectl label node linux-node2 node-role.kubernetes.io/master=""
 /opt/kubernetes/bin/kubectl label node linux-node3 node-role.kubernetes.io/master=""
+/opt/kubernetes/bin/kubectl taint nodes linux-node1 node-role.kubernetes.io/master="":NoSchedule
+/opt/kubernetes/bin/kubectl taint nodes linux-node2 node-role.kubernetes.io/master="":NoSchedule
+/opt/kubernetes/bin/kubectl taint nodes linux-node3 node-role.kubernetes.io/master="":NoSchedule
 #在node节点上执行
 kubectl label node linux-node4 node-role.kubernetes.io/worker=worker
 ```
@@ -321,14 +324,14 @@ kubectl label node linux-node4 node-role.kubernetes.io/worker=worker
 #先验证etcd
 [root@linux-node1 ~]# source /etc/profile
 [root@linux-node1 ~]# etcdctl --endpoints=http://192.168.200.181:2379 cluster-health
-member 937f18b4916f332b is healthy: got healthy result from http://192.168.200.181:2379
-member d882a8adbfbb5755 is healthy: got healthy result from http://192.168.200.182:2379
-member eae26a25cb42d19f is healthy: got healthy result from http://192.168.200.183:2379
+member 1b59c715892a07 is healthy: got healthy result from http://192.168.200.183:2379
+member 5a23180c9f872e86 is healthy: got healthy result from http://192.168.200.182:2379
+member edf2d8c54db4c5e1 is healthy: got healthy result from http://192.168.200.181:2379
 cluster is healthy
 [root@linux-node1 ~]# etcdctl --endpoints=http://192.168.200.181:2379 member list
-1b59c715892a07: name=etcd-node3 peerURLs=http://192.168.200.183:2380 clientURLs=http://192.168.200.183:2379 isLeader=false
+1b59c715892a07: name=etcd-node3 peerURLs=http://192.168.200.183:2380 clientURLs=http://192.168.200.183:2379 isLeader=true
 5a23180c9f872e86: name=etcd-node2 peerURLs=http://192.168.200.182:2380 clientURLs=http://192.168.200.182:2379 isLeader=false
-edf2d8c54db4c5e1: name=etcd-node1 peerURLs=http://192.168.200.181:2380 clientURLs=http://192.168.200.181:2379 isLeader=true
+edf2d8c54db4c5e1: name=etcd-node1 peerURLs=http://192.168.200.181:2380 clientURLs=http://192.168.200.181:2379 isLeader=false
 [root@linux-node1 ~]# kubectl get cs
 NAME                 STATUS    MESSAGE             ERROR
 controller-manager   Healthy   ok
@@ -338,14 +341,14 @@ etcd-1               Healthy   {"health":"true"}
 etcd-0               Healthy   {"health":"true"}
 [root@linux-node1 ~]# kubectl get node
 NAME          STATUS   ROLES    AGE     VERSION
-linux-node1   Ready    master   3h12m   v1.15.4
-linux-node2   Ready    master   3h12m   v1.15.4
-linux-node3   Ready    master   3h13m   v1.15.4
-linux-node4   Ready    node     3h14m   v1.15.4
+linux-node1   Ready    master   17m     v1.15.4
+linux-node2   Ready    master   16m     v1.15.4
+linux-node3   Ready    master   16m     v1.15.4
+linux-node4   Ready    worker   9m39s   v1.15.4
 ```
 ## 7.测试Kubernetes集群和Flannel网络
 
-```Bash
+```bash
 [root@linux-node1 ~]# kubectl create deployment nginx --image=nginx:alpine
 deployment.apps/nginx created
 需要等待拉取镜像，可能稍有的慢，请等待。
@@ -421,19 +424,6 @@ linux-node5:
         <td><a href="docs/helm.md">8.Helm部署</a></td>
     </tr>
 </table>
-
-
-
-为Master节点打上污点，让POD尽可能的不要调度到Master节点上。
-
-关于污点的说明大家可自行百度。
-
-```bash
-kubectl describe node linux-node1
-kubectl taint node k8s-m1 node-role.kubernetes.io/master=linux-node1:PreferNoSchedule
-kubectl taint node k8s-m2 node-role.kubernetes.io/master=linux-node2:PreferNoSchedule
-kubectl taint node k8s-m3 node-role.kubernetes.io/master=linux-node3:PreferNoSchedule
-```
 
 ## 10.（可选）可以把kube-proxy按照daemonset的方式部署;按照这种方式部署的话要先停用二进制安装的kube-proxy。
 
