@@ -524,6 +524,250 @@ kubectl apply -f /srv/addons/ingress-prometheus.yaml
 
 然后访问`https://prometheus.mofangge.cc` 和 `https://grafana.mofangge.cc` 即可
 
+## prometheus的数据持久化以及自动发现
+
+基于Ceph-rbd构建存储类
+1. 初始化moitoring空间用户的secret
+```bash
+[root@kubeadm-master-01 ceph]# cat ceph-secret-monitoring.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ceph-monitoring-secret
+  namespace: monitoring
+type: "kubernetes.io/rbd"
+data:
+  key: QVFDWWhJMWRGYmprQWhBQUR5eEpHSFhyUnBIZGI0ZEg1a21wZ3c9PQ==
+```
+2. 配置admin的secret
+```bash
+[root@kubeadm-master-01 ceph]# cat ceph-secret-kubesystem.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ceph-secret
+  namespace: kube-system
+type: "kubernetes.io/rbd"
+data:
+  key: QVFDWWhJMWRGYmprQWhBQUR5eEpHSFhyUnBIZGI0ZEg1a21wZ3c9PQ==
+```
+3. 构建存储类
+```bash
+[root@kubeadm-master-01 ceph]# cat prometheus-ceph-fast.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: prometheus-ceph-fast
+   namespace: monitoring
+provisioner: ceph.com/rbd
+#provisioner: kubernetes.io/rbd
+parameters:
+  monitors: 192.168.200.84:6789,192.168.200.85:6789,192.168.200.86:6789
+  adminId: admin
+  adminSecretName: ceph-secret
+  adminSecretNamespace: kube-system
+  pool: rbd #此处默认是rbd池，生产上建议自己创建存储池隔离
+  userId: admin
+  userSecretName: ceph-monitoring-secret
+  fsType: xfs
+  imageFormat: "2"
+  imageFeatures: "layering"
+```
+4. 修改prometheus-prometheus.yaml
+```bash
+[root@kubeadm-master-01 prometheus]# pwd
+/data/yaml/prometheus-all/prometheus
+[root@kubeadm-master-01 prometheus]# cat prometheus-prometheus.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  labels:
+    prometheus: k8s
+  name: k8s
+  namespace: monitoring
+spec:
+  retention: "1w" #默认的存储时限是24h，如果你需要存储更多时间，比如一周请配置为1w
+  alerting:
+    alertmanagers:
+    - name: alertmanager-main
+      namespace: monitoring
+      port: web
+  baseImage: prom/prometheus
+  nodeSelector:
+    kubernetes.io/os: linux
+  podMonitorSelector: {}
+  replicas: 2
+  resources:
+    requests:
+      memory: 400Mi
+  ruleSelector:
+    matchLabels:
+      prometheus: k8s
+      role: alert-rules
+  securityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  additionalScrapeConfigs: #定义自动发现
+    name: additional-configs
+    key: prometheus-additional.yaml
+  serviceAccountName: prometheus-k8s
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector: {}
+  version: v2.11.0
+  storage: #定义使用存储类
+    volumeClaimTemplate:
+      spec:
+        storageClassName: prometheus-ceph-fast
+        resources:
+          requests:
+            storage: 64Gi
+```
+注意这里的 storageClassName 名字为上面我们创建的 StorageClass 对象名称，然后更新 prometheus 这个 CRD 资源。更新完成后会自动生成两个 PVC 和 PV 资源对象：
+
+```bash
+[root@kubeadm-master-01 prometheus]# kubectl get pvc -n monitoring
+NAME                                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS           AGE
+prometheus-k8s-db-prometheus-k8s-0   Bound    pvc-53bbc26c-0113-11ea-a016-00505682b6ba   64Gi       RWO            prometheus-ceph-fast   5h19m
+prometheus-k8s-db-prometheus-k8s-1   Bound    pvc-53c873ce-0113-11ea-a016-00505682b6ba   64Gi       RWO            prometheus-ceph-fast   5h19m
+[root@kubeadm-master-01 prometheus]# kubectl get pv -n monitoring
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                           STORAGECLASS           REASON   AGE
+pvc-53bbc26c-0113-11ea-a016-00505682b6ba   64Gi       RWO            Delete           Bound    monitoring/prometheus-k8s-db-prometheus-k8s-0   prometheus-ceph-fast            5h19m
+pvc-53c873ce-0113-11ea-a016-00505682b6ba   64Gi       RWO            Delete           Bound    monitoring/prometheus-k8s-db-prometheus-k8s-1   prometheus-ceph-fast            5h19m
+```
+5. 自动发现
+
+为解决上面的问题，Prometheus Operator 为我们提供了一个额外的抓取配置的来解决这个问题，我们可以通过添加额外的配置来进行服务发现进行自动监控。和前面自定义的方式一样，我们想要在 Prometheus Operator 当中去自动发现并监控具有prometheus.io/scrape=true这个 annotations 的 Service，之前我们定义的 Prometheus 的配置如下
+```bash
+- job_name: 'kubernetes-service-endpoints'
+  kubernetes_sd_configs:
+  - role: endpoints
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+    action: replace
+    target_label: __scheme__
+    regex: (https?)
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+    action: replace
+    target_label: __address__
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+  - action: labelmap
+    regex: __meta_kubernetes_service_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_service_name]
+    action: replace
+    target_label: kubernetes_name
+```
+要想自动发现集群中的 Service，就需要我们在 Service 的annotation区域添加prometheus.io/scrape=true的声明，将上面文件直接保存为 prometheus-additional.yaml，然后通过这个文件创建一个对应的 Secret 对象：
+```bash
+$ kubectl create secret generic additional-configs --from-file=prometheus-additional.yaml -n monitoring
+secret "additional-configs" created
+```
+创建完成后，会将上面配置信息进行 base64 编码后作为 prometheus-additional.yaml 这个 key 对应的值存在：
+```bash
+[root@kubeadm-master-01 prometheus]# kubectl get secret additional-configs -n monitoring -o yaml
+apiVersion: v1
+data:
+  prometheus-additional.yaml: LSBqb2JfbmFtZTogJ2t1YmVybmV0ZXMtc2VydmljZS1lbmRwb2ludHMnCiAga3ViZXJuZXRlc19zZF9jb25maWdzOgogIC0gcm9sZTogZW5kcG9pbnRzCiAgcmVsYWJlbF9jb25maWdzOgogIC0gc291cmNlX2xhYmVsczogW19fbWV0YV9rdWJlcm5ldGVzX3NlcnZpY2VfYW5ub3RhdGlvbl9wcm9tZXRoZXVzX2lvX3NjcmFwZV0KICAgIGFjdGlvbjoga2VlcAogICAgcmVnZXg6IHRydWUKICAtIHNvdXJjZV9sYWJlbHM6IFtfX21ldGFfa3ViZXJuZXRlc19zZXJ2aWNlX2Fubm90YXRpb25fcHJvbWV0aGV1c19pb19zY2hlbWVdCiAgICBhY3Rpb246IHJlcGxhY2UKICAgIHRhcmdldF9sYWJlbDogX19zY2hlbWVfXwogICAgcmVnZXg6IChodHRwcz8pCiAgLSBzb3VyY2VfbGFiZWxzOiBbX19tZXRhX2t1YmVybmV0ZXNfc2VydmljZV9hbm5vdGF0aW9uX3Byb21ldGhldXNfaW9fcGF0aF0KICAgIGFjdGlvbjogcmVwbGFjZQogICAgdGFyZ2V0X2xhYmVsOiBfX21ldHJpY3NfcGF0aF9fCiAgICByZWdleDogKC4rKQogIC0gc291cmNlX2xhYmVsczogW19fYWRkcmVzc19fLCBfX21ldGFfa3ViZXJuZXRlc19zZXJ2aWNlX2Fubm90YXRpb25fcHJvbWV0aGV1c19pb19wb3J0XQogICAgYWN0aW9uOiByZXBsYWNlCiAgICB0YXJnZXRfbGFiZWw6IF9fYWRkcmVzc19fCiAgICByZWdleDogKFteOl0rKSg/OjpcZCspPzsoXGQrKQogICAgcmVwbGFjZW1lbnQ6ICQxOiQyCiAgLSBhY3Rpb246IGxhYmVsbWFwCiAgICByZWdleDogX19tZXRhX2t1YmVybmV0ZXNfc2VydmljZV9sYWJlbF8oLispCiAgLSBzb3VyY2VfbGFiZWxzOiBbX19tZXRhX2t1YmVybmV0ZXNfbmFtZXNwYWNlXQogICAgYWN0aW9uOiByZXBsYWNlCiAgICB0YXJnZXRfbGFiZWw6IGt1YmVybmV0ZXNfbmFtZXNwYWNlCiAgLSBzb3VyY2VfbGFiZWxzOiBbX19tZXRhX2t1YmVybmV0ZXNfc2VydmljZV9uYW1lXQogICAgYWN0aW9uOiByZXBsYWNlCiAgICB0YXJnZXRfbGFiZWw6IGt1YmVybmV0ZXNfbmFtZQo=
+kind: Secret
+metadata:
+  creationTimestamp: "2019-11-07T06:59:24Z"
+  name: additional-configs
+  namespace: monitoring
+  resourceVersion: "27660509"
+  selfLink: /api/v1/namespaces/monitoring/secrets/additional-configs
+  uid: 21d59cf2-012c-11ea-a016-00505682b6ba
+type: Opaque
+```
+
+然后我们只需要在声明 prometheus 的资源对象文件中添加上这个额外的配置：(prometheus-prometheus.yaml)
+```bash
+additionalScrapeConfigs:
+    name: additional-configs
+    key: prometheus-additional.yaml
+```
+添加完成后，直接更新 prometheus 这个 CRD 资源对象:
+```bash
+$ kubectl apply -f prometheus-prometheus.yaml
+prometheus.monitoring.coreos.com "k8s" configured
+```
+
+在 Prometheus Dashboard 的配置页面下面我们可以看到已经有了对应的的配置信息了，但是我们切换到 targets 页面下面却并没有发现对应的监控任务，查看 Prometheus 的 Pod 日志：
+```bash
+$ kubectl logs -f prometheus-k8s-0 prometheus -n monitoring
+level=error ts=2018-12-20T15:14:06.772903214Z caller=main.go:240 component=k8s_client_runtime err="github.com/prometheus/prometheus/discovery/kubernetes/kubernetes.go:302: Failed to list *v1.Pod: pods is forbidden: User \"system:serviceaccount:monitoring:prometheus-k8s\" cannot list pods at the cluster scope"
+level=error ts=2018-12-20T15:14:06.773096875Z caller=main.go:240 component=k8s_client_runtime err="github.com/prometheus/prometheus/discovery/kubernetes/kubernetes.go:301: Failed to list *v1.Service: services is forbidden: User \"system:serviceaccount:monitoring:prometheus-k8s\" cannot list services at the cluster scope"
+level=error ts=2018-12-20T15:14:06.773212629Z caller=main.go:240 component=k8s_client_runtime err="github.com/prometheus/prometheus/discovery/kubernetes/kubernetes.go:300: Failed to list *v1.Endpoints: endpoints is forbidden: User \"system:serviceaccount:monitoring:prometheus-k8s\" cannot list endpoints at the cluster scope"
+```
+可以看到有很多错误日志出现，都是xxx is forbidden，这说明是 RBAC 权限的问题，通过 prometheus 资源对象的配置可以知道 Prometheus 绑定了一个名为 prometheus-k8s 的 ServiceAccount 对象，而这个对象绑定的是一个名为 prometheus-k8s 的 ClusterRole：（prometheus-clusterRole.yaml）
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-k8s
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes/metrics
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+```
+上面的权限规则中我们可以看到明显没有对 Service 或者 Pod 的 list 权限，所以报错了，要解决这个问题，我们只需要添加上需要的权限即可：
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-k8s
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - services
+  - endpoints
+  - pods
+  - nodes/proxy
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - nodes/metrics
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+```
+更新上面的 ClusterRole 这个资源对象，然后重建下 Prometheus 的所有 Pod，正常就可以看到 targets 页面下面有 kubernetes-service-endpoints 这个监控任务了：
+![监控任务](../images/Snipaste_2019-11-07_17-29-32.png)
+我们这里自动监控了两个 Service，一个是coredns，一个是ingress-nginx-lb，他们 中有两个特殊的 annotations：
+```yaml
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "80"
+```
+所以被自动发现了，当然我们也可以用同样的方式去配置 Pod、Ingress 这些资源对象的自动发现。
 ## 常见坑的说明和解决方法
 
 这里要注意有一个坑,二进制部署k8s管理组件和新版本kubeadm部署的都会发现在prometheus server的页面上发现kube-controller和kube-schedule的target为0/0也就是上图所示
@@ -773,7 +1017,7 @@ annotations:
   message: Alertmanager has disappeared from Prometheus target discovery.
   runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-alertmanagerdown
 ```
-
+##
 
 参考文档：
 
