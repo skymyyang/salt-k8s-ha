@@ -190,8 +190,9 @@ spec:
 ```
 
 
-## Stronge Class（存储类）
+## StrongeClass（存储类）
 
+### RBD-StrongeClass
 是一种标准的k8s资源。支持动态申请PV的功能。
 这里我们将使用ceph为k8s提供动态申请PV的功能。ceph提供底层存储的功能，cephfs方式支持k8s的pv的3中访问模式，ReadWriteOnce，ReadOnlyMany ，ReadWriteMany,RBD支持ReadWriteOnce，ReadOnlyMany两种模式。
 
@@ -439,7 +440,7 @@ POD_ID=$(kubectl get pods -o wide | grep nginx-pod1 | awk '{print $(NF-1)}')
 curl http://$POD_ID
 ```
 
-### 使用CephFS
+### CephFS-StrongeClasee
 
 1. 部署cephfs-provisioner
 
@@ -639,3 +640,152 @@ curl http://$POD_ID
 kubectl delete -f nginx-pod.yaml
 kubectl delete -f cephfs-pvc-test.yaml
 ```
+
+
+### NFS-StrongClass
+
+1. 安装nfs server
+  
+   ```bash
+   yum install nfs-utils rpcbind -y
+   ```
+2. 编辑/etc/exports，并启动nfs
+   ```bash
+   vim /etc/exports
+   /data 192.168.200.0/24(rw,sync,no_root_squash,no_all_squash)
+   systemctl start nfs && systemctl enable nfs
+   # 如若后续遇到权限问题，可以直接赋予目录777的权限
+   # chmod 777 /data/ -R
+   ```
+3. 安装并配置nfs插件客户端
+  
+    官网地址：https://github.com/kubernetes-incubator/external-storage/tree/master/nfs-client
+    
+    下载rbac.yaml deployment.yaml两个文件，进行部署,本人使用的是k8sv1.14.7 kubeadm部署，官网的sa权限是有问题的，这里我们进行修改，修改之后的文件如下：
+    
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nfs-client-provisioner
+  # replace with namespace where provisioner is deployed
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nfs-client-provisioner-runner
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["watch, ""create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get","create","list", "watch","update"]
+  - apiGroups: ["extensions"]
+    resources: ["podsecuritypolicies"]
+    resourceNames: ["nfs-client-provisioner"]
+    verbs: ["use"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: run-nfs-client-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: nfs-client-provisioner
+    # replace with namespace where provisioner is deployed
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: nfs-client-provisioner-runner
+  apiGroup: rbac.authorization.k8s.io
+```
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-client-provisioner
+  labels:
+    app: nfs-client-provisioner
+  # replace with namespace where provisioner is deployed
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner
+          image: skymyyang/nfs-client-provisioner:latest
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: fuseim.pri/ifs
+            - name: NFS_SERVER
+              value: 192.168.200.131
+            - name: NFS_PATH
+              value: /data
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: 192.168.200.131
+            path: /data
+```
+
+4. 定义存储类
+   存储类是不区分名称空间。这里我们定义一个harbor的存储类，便于我们在k8s集群中安装harbor。
+
+   `$ cat harbor-data-sc.yaml`
+
+```yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: harbor-data
+provisioner: fuseim.pri/ifs
+parameters:
+  archiveOnDelete: "false"
+```
+
+5. 测试验证
+   定义一个PV进行相关测试
+
+```yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: rbd-pvc-pod-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: harbor-data
+```
+   
