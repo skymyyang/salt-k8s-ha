@@ -460,6 +460,22 @@ kube-proxy-zgg6t          1/1     Running   2          16h
 
 插件安装请参考文档必备插件的部分。
 
+## 12. 缩短Pod重启时间
+
+在实际应用中，想要缩短Pod重启时间，可以修改kube-controller-manager配置中的以下几个参数：
+```
+--node-monitor-grace-period=10s \
+--node-monitor-period=3s \
+--node-startup-grace-period=20s \
+--pod-eviction-timeout=10s \
+```
+kubernetes节点失效后pod的调度过程：
+1. Master每隔一段时间和node联系一次，判定node是否失联，这个时间周期配置项为 node-monitor-period ，默认5s
+2. 当node失联后一段时间后，kubernetes判定node为notready状态，这段时长的配置项为 node-monitor-grace-period ，默认40s
+3. 当node失联后一段时间后，kubernetes判定node为unhealthy，这段时长的配置项为 node-startup-grace-period ，默认1m0s
+4. 当node失联后一段时间后，kubernetes开始删除原node上的pod，这段时长配置项为 pod-eviction-timeout ，默认5m0s
+
+
 ## 捐赠
 
 如果觉得本项目对您有帮助，请小小鼓励下项目作者，谢谢！
