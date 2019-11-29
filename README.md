@@ -475,6 +475,20 @@ kubernetes节点失效后pod的调度过程：
 3. 当node失联后一段时间后，kubernetes判定node为unhealthy，这段时长的配置项为 node-startup-grace-period ，默认1m0s
 4. 当node失联后一段时间后，kubernetes开始删除原node上的pod，这段时长配置项为 pod-eviction-timeout ，默认5m0s
 
+## 13. kubectl命令自动补全功能
+在管理k8s集群的时候，kubectl是我们经常使用的命令工具，由于本身kubectl的复杂性和api选项的过多，都给我们日常工作带来了不小的挑战，故这里介绍一下kubectl命令补全工具的安装
+
+1. 安装bash-completion
+```bash
+$yum install -y bash-completion 
+$source /usr/share/bash-completion/bash_completion
+```
+2. 应用kubectl的completion到系统环境中
+```bash
+$echo "source <(kubectl completion bash)" >> ~/.bashrc
+$source ~/.bashrc
+```
+接下来就可以愉快的进行命令补全了。
 
 ## 捐赠
 
