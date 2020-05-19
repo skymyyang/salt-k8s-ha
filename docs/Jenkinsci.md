@@ -206,3 +206,22 @@ This may also be found at: /var/jenkins_home/secrets/initialAdminPassword
 ```
 
 ps: 选择安装推荐的插件可能会报错，报错信息为：`安装过程中出现一个错误： No valid crumb was included in the request`, 此时我们选择继续，然后默认下一步，接着设置Jenkins url即可。
+
+此错误导致的原因，百度了一下。
+解决方案（Solution）：
+
+1.在apache/nginx中设置ignore_invalid_headers，或者：
+
+2.在jenkins全局安全设置中取消勾选“防止跨站点请求伪造（Prevent Cross Site Request Forgery exploits）”。
+
+在导出nginx-ingress的配置文件中，好像已经设置了 `ignore_invalid_headers on` 的配置。因此这里我们只需要设置取消“防止跨站点请求伪造（Prevent Cross Site Request Forgery exploits）”的勾选。
+
+参考链接： `https://www.zhyea.com/2016/10/14/resolve-no-valid-crumb-was-included-in-the-request-error.html`
+
+至此，Jenkins已经安装完成了。
+
+
+
+
+PS: 参考链接
+1. https://www.qikqiak.com/post/kubernetes-jenkins1/

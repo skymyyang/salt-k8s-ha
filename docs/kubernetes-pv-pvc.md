@@ -118,7 +118,6 @@ PersistentVolume（pv）和PersistentVolumeClaim（pvc）是k8s提供的两种AP
 pvc和pv的关系与pod和node关系类似，前者消耗后者的资源。pvc可以向pv申请指定大小的存储资源并设置访问模式,这就可以通过Provision -> Claim 的方式，来对存储资源进行控制。
 
 
-![pv-pvc.png](https://ws1.sinaimg.cn/large/8141265fgy1g6nju9dlk9j210s0nv7dg.jpg)
 
 pv的定义
 
@@ -788,4 +787,14 @@ spec:
       storage: 8Gi
   storageClassName: harbor-data
 ```
+
+6. 删除步骤
+
+   ```shell
+   #删除的时候先删除pvc 再删除pv  但是删除之前建议先备份数据
+   #pvc 是有名称空间之分的，pv是不区分名称空间的
+   kubectl delete pvc prometheus-k8s-db-prometheus-k8s-0 -n monitoring
+   kubectl delete pv pvc-53bbc26c-0113-11ea-a016-00505682b6ba
+   ```
+
    
