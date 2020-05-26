@@ -1,6 +1,0 @@
-{
-  "Network": "{{ PodCIDR }}",
-  "Backend": {
-    "Type": "vxlan"
-  }
-}

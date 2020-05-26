@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #********************************************
-# Author:       iokubernetes
+# Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: iokubernetes.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # Description:  Kubernetes Config with Pillar
 #********************************************
 
@@ -11,12 +11,14 @@ MASTER_IP_M1: "192.168.200.181"
 MASTER_IP_M2: "192.168.200.182"
 MASTER_IP_M3: "192.168.200.183"
 #设置Master的HOSTNAME完整的FQDN名称(必须修改)
-MASTER_H1: "linux-node1"
-MASTER_H2: "linux-node2"
-MASTER_H3: "linux-node3"
+MASTER_H1: "c8-node1.example.com"
+MASTER_H2: "c8-node2.example.com"
+MASTER_H3: "c8-node3.example.com"
 
 #KUBE-APISERVER的反向代理地址端口
-KUBE_APISERVER: "https://127.0.0.1:8443"
+#KUBE_APISERVER: "https://127.0.0.1:8443"
+KUBE_APISERVER: "https://server.k8s.local:8443"
+KUBE_APISERVER_DNS_NAME: "server.k8s.local"
 
 #设置ETCD集群访问地址（必须修改）
 ETCD_ENDPOINTS: "http://192.168.200.181:2379,http://192.168.200.182:2379,http://192.168.200.183:2379"
@@ -61,4 +63,4 @@ CLUSTER_DNS_DOMAIN: "cluster.local."
 #MASTER_VIP: "192.168.150.253"
 
 #设置网卡名称，一定要改
-VIP_IF: "eth0"
+VIP_IF: "ens192"

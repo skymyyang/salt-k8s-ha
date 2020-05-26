@@ -3,7 +3,7 @@ Description=Kubernetes Scheduler
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 
 [Service]
-ExecStart=/opt/kubernetes/bin/kube-scheduler \
+ExecStart=/usr/local/bin/kube-scheduler \
   --leader-elect=true \
   --bind-address=127.0.0.1 \
   --kubeconfig=/etc/kubernetes/scheduler.conf

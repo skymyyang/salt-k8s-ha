@@ -4,7 +4,10 @@
       "127.0.0.1",
       "{{ MASTER_IP_M1 }}",
       "{{ MASTER_IP_M2 }}",
-      "{{ MASTER_IP_M3 }}"
+      "{{ MASTER_IP_M3 }}",
+      "{{ MASTER_H1 }}",
+      "{{ MASTER_H2 }}",
+      "{{ MASTER_H3 }}"
     ],
     "key": {
         "algo": "rsa",

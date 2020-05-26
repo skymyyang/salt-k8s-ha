@@ -5,14 +5,13 @@
 # Organization: iokubernetes.github.io
 # Description:  ETCD Cluster
 #******************************************
-{% set etcd_version = "etcd-v3.3.13-linux-amd64" %}
+{% set etcd_version = "etcd-v3.4.8-linux-amd64" %}
 
-include:
-  - k8s.modules.base-dir
+
 
 etcd-bin:
   file.managed:
-    - name: /opt/kubernetes/bin/etcd
+    - name: /usr/local/bin/etcd
     - source: salt://k8s/files/{{ etcd_version }}/etcd
     - user: root
     - group: root
@@ -20,7 +19,7 @@ etcd-bin:
 
 etcdctl-bin:
  file.managed:
-   - name: /opt/kubernetes/bin/etcdctl
+   - name: /usr/local/bin/etcdctl
    - source: salt://k8s/files/{{ etcd_version }}/etcdctl
    - user: root
    - group: root

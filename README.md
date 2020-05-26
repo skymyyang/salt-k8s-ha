@@ -4,30 +4,30 @@
 
 
 ## 版本明细：Release-v1.15.4
-- 测试通过系统：CentOS 7.6
-- Kernel Version: 4.18.16-1.el7.elrepo.x86_64
-- salt-ssh:     salt-ssh 2019.2.0-1
-- Kubernetes：  v1.15.4
-- Etcd:         v3.3.13
+- 测试通过系统：CentOS 8.1
+- Kernel Version: 4.18.0-147.8.1.el8_1.x86_64
+- salt-ssh:     3000.3-1.el8
+- Kubernetes：  v1.18.2
+- Etcd:         v3.4.8
 - Docker-ce:    v18.09.2
-- Flannel：     v0.11.0
-- CNI-Plugins： v0.7.4
-- nginx:        v1.16.1
+- Calico：     v0.11.0
+- CNI-Plugins： v0.8.6
+- nginx:        v1.18.0
 
 建议部署节点：最少三个Master节点，请配置好主机名解析（必备）。以下是最小配置，否则可能不成功。
 
 IP地址 | Hostname | 最小配置 | Kernel Version
 ---|--- | --- | --- |
-192.168.200.181 | linux-node1 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
-192.168.200.182 | linux-node2 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
-192.168.200.183 | linux-node3 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
-192.168.200.184 | linux-node4 | Centos7.6 4G 2CPU | 4.18.16-1.el7.elrepo.x86_64
+192.168.200.181 | c8-node1 | Centos8.1 8G 4CPU | 4.18.0-147.8.1.el8_1.x86_64
+192.168.200.182 | c8-node2 | Centos8.1 8G 4CPU | 4.18.0-147.8.1.el8_1.x86_64
+192.168.200.183 | c8-node3 | Centos8.1 8G 4CPU | 4.18.0-147.8.1.el8_1.x86_64
+192.168.200.184 | c8-node4 | Centos8.1 8G 4CPU | 4.18.0-147.8.1.el8_1.x86_64
 
 ## 架构介绍
 1. 使用Salt Grains进行角色定义，增加灵活性。
 2. 使用Salt Pillar进行配置项管理，保证安全性。
 3. 使用Salt SSH执行状态，不需要安装Agent，保证通用性。
-4. 使用Kubernetes当前稳定版本v1.15.4，保证稳定性。
+4. 使用Kubernetes当前最新版本v1.18.2，体验新特性。
 5. 使用nginx来保证集群的高可用。
 6. KeepAlive+VIP的形式完成高可用的缺点
     - 受限于使用者的网络，无法适用于SDN网络，比如Aliyun的VPC
@@ -40,9 +40,7 @@ IP地址 | Hostname | 最小配置 | Kernel Version
 1. 首先TLS的目的是为了鉴权为了防止别人任意的连接上你的etcd集群。其实意思就是说如果你要放到公网上的ETCD集群，并开放端口，我建议你一定要用TLS。
 2. 如果你的ETCD集群跑在一个内网环境比如（VPC环境），而且你也不会开放ETCD端口，你的ETCD跑在防火墙之后，一个安全的局域网中，那么你用不用TLS，都行。
 
-## 技术交流QQ群（加群请备注来源于Github）：
 
-- Docker&Kubernetes：796163694
 
 - 本教程的来源于以下教程而生成，在此特别感谢两位作者。
 
@@ -59,48 +57,45 @@ IP地址 | Hostname | 最小配置 | Kernel Version
 1. 设置主机名！！！
 
 ```bash
-[root@linux-node1 ~]# cat /etc/hostname
-linux-node1
+[root@c8-node1 ~]# cat /etc/hostname 
+c8-node1.example.com
 
-[root@linux-node2 ~]# cat /etc/hostname
-linux-node2
+[root@c8-node2 ~]# cat /etc/hostname 
+c8-node2.example.com
 
-[root@linux-node3 ~]# cat /etc/hostname
-linux-node3
+[root@c8-node3 ~]# cat /etc/hostname 
+c8-node3.example.com
 
-[root@linux-node4 ~]# cat /etc/hostname
-linux-node4
+[root@c8-node4 ~]# cat /etc/hostname 
+c8-node4.example.com
 ```
 
 2. 设置/etc/hosts保证主机名能够解析
 
 ```bash
-[root@linux-node1 ~]# cat /etc/hosts
+[root@c8-node1 ~]# cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-192.168.200.181 linux-node1
-192.168.200.182 linux-node2
-192.168.200.183 linux-node3
-192.168.200.184 linux-node4
+192.168.200.181 c8-node1 c8-node1.example.com
+192.168.200.182 c8-node2 c8-node2.example.com
+192.168.200.183 c8-node3 c8-node3.example.com
+192.168.200.184 c8-node4 c8-node4.example.com
 ```
 
-3. 关闭SELinux和防火墙以及NetworkManager
+3. 关闭SELinux和防火墙以及NetworkManager，并配置chrony进行确保时间同步
 
 ```bash
-systemctl disable --now firewalld NetworkManager
-setenforce 0
-sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
+shell> systemctl disable --now firewalld NetworkManager
+shell> setenforce 0
+shell> sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
+shell> yum install chrony -y
+shell> systemctl enable chronyd
+shell> systemctl restart chronyd
 ```
 
-4. 升级内核
 
-<table border="0">
-       <tr>
-           <td><a href="docs/update-kernel.md">升级内核</a></td>
-       </tr>
-</table>
 
-5. 以上必备条件必须严格检查，否则，一定不会部署成功！
+4. 以上必备条件必须严格检查，否则，一定不会部署成功！
 
 ## 1.设置部署节点到其它所有节点的SSH免密码登录（包括本机）
 ```bash
@@ -118,8 +113,8 @@ sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 
 2.1 安装Salt SSH（注意：老版本的Salt SSH不支持Roster定义Grains，需要2017.7.4以上版本）
 ```bash
-[root@linux-node1 ~]# yum install -y https://mirrors.aliyun.com/saltstack/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
-[root@linux-node1 ~]# sed -i "s/repo.saltstack.com/mirrors.aliyun.com\/saltstack/g" /etc/yum.repos.d/salt-latest.repo
+[root@linux-node1 ~]# yum install https://repo.saltstack.com/py3/redhat/salt-py3-repo-latest.el8.noarch.rpm
+[root@linux-node1 ~]# sed -i "s/repo.saltstack.com/mirrors.aliyun.com\/saltstack/g" /etc/yum.repos.d/salt-py3-latest.repo
 [root@linux-node1 ~]# yum install -y salt-ssh git unzip p7zip
 ```
 
@@ -163,7 +158,7 @@ drwx------ 2 root root  33 Mar 18 20:17 nginx-1.16.1
 
 ```yaml
 
-linux-node1:
+c8-node1:
   host: 192.168.200.181
   user: root
   priv: /root/.ssh/id_rsa
@@ -172,9 +167,11 @@ linux-node1:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
-      admin-role: master
+      admin-role: admin
+      calico-role: admin
+      sa-role: admin
 
-linux-node2:
+c8-node2:
   host: 192.168.200.182
   user: root
   priv: /root/.ssh/id_rsa
@@ -184,7 +181,7 @@ linux-node2:
       etcd-role: node
       etcd-name: etcd-node2
 
-linux-node3:
+c8-node3:
   host: 192.168.200.183
   user: root
   priv: /root/.ssh/id_rsa
@@ -194,7 +191,7 @@ linux-node3:
       etcd-role: node
       etcd-name: etcd-node3
 
-linux-node4:
+c8-node4:
   host: 192.168.200.184
   user: root
   priv: /root/.ssh/id_rsa
@@ -205,18 +202,19 @@ linux-node4:
 
 ## 4.修改对应的配置参数，本项目使用Salt Pillar保存配置
 ```bash
-[root@k8s-m1 ~]# vim /srv/pillar/k8s.sls
 #设置Master的IP地址(必须修改)
 MASTER_IP_M1: "192.168.200.181"
 MASTER_IP_M2: "192.168.200.182"
 MASTER_IP_M3: "192.168.200.183"
 #设置Master的HOSTNAME完整的FQDN名称(必须修改)
-MASTER_H1: "linux-node1"
-MASTER_H2: "linux-node2"
-MASTER_H3: "linux-node3"
+MASTER_H1: "c8-node1.example.com"
+MASTER_H2: "c8-node2.example.com"
+MASTER_H3: "c8-node3.example.com"
 
 #KUBE-APISERVER的反向代理地址端口
-KUBE_APISERVER: "https://127.0.0.1:8443"
+#KUBE_APISERVER: "https://127.0.0.1:8443"
+KUBE_APISERVER: "https://server.k8s.local:8443"
+KUBE_APISERVER_DNS_NAME: "server.k8s.local"
 
 #设置ETCD集群访问地址（必须修改）
 ETCD_ENDPOINTS: "http://192.168.200.181:2379,http://192.168.200.182:2379,http://192.168.200.183:2379"
@@ -245,18 +243,23 @@ CLUSTER_KUBERNETES_SVC_IP: "10.96.0.1"
 #Kubernetes DNS 服务 IP (从 SERVICE_CIDR 中预分配)
 CLUSTER_DNS_SVC_IP: "10.96.0.2"
 
-#设置Node Port的端口范围,已修改为默认配置,可自己自定义
+#设置Node Port的端口范围
 NODE_PORT_RANGE: "30000-32767"
 
-#设置POD的IP地址段
+#设置POD的IP地址段,在kube-controller-manager中定义cluster-cidr
 POD_CIDR: "10.244.0.0/16"
 CLUSTER_CIDR: "10.244.0.0/16"
 
 #设置集群的DNS域名
 CLUSTER_DNS_DOMAIN: "cluster.local."
+#已注释不在需要
+#设置Docker Registry地址
+#DOCKER_REGISTRY: "https://192.168.150.135:5000"
+#设置Master的VIP地址(必须修改)
+#MASTER_VIP: "192.168.150.253"
 
-#设置网卡名称
-VIP_IF: "eth0"
+#设置网卡名称，一定要改
+VIP_IF: "ens192"
 
 ```
 

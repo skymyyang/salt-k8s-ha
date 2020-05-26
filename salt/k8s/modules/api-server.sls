@@ -1,53 +1,21 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       iokubernetes
+# Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: iokubernetes.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # Description:  Kubernetes API Server
 #******************************************
 
-{% set k8s_version = "k8s-v1.15.4" %}
+{% set k8s_version = "k8s-v1.18.2" %}
 
-include:
-  - k8s.modules.kubectl
-
-#生产apiserver-kubelet-client相关证书和key
-kube-api-server-csr-json:
-  file.managed:
-    - name: /opt/kubernetes/ssl/kubernetes-csr.json
-    - source: salt://k8s/templates/kube-api-server/kubernetes-csr.json.template
-    - user: root
-    - group: root
-    - mode: 644
-    - template: jinja
-    - defaults:
-        MASTER_IP_M1: {{ pillar['MASTER_IP_M1'] }}
-        MASTER_IP_M2: {{ pillar['MASTER_IP_M2'] }}
-        MASTER_IP_M3: {{ pillar['MASTER_IP_M3'] }}
-        CLUSTER_KUBERNETES_SVC_IP: {{ pillar['CLUSTER_KUBERNETES_SVC_IP'] }}
-  cmd.run:
-    - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes kubernetes-csr.json | /opt/kubernetes/bin/cfssljson -bare apiserver-kubelet-client
-    - unless: test -f /opt/kubernetes/ssl/apiserver-kubelet-client.pem
-
-metrics-server-csr-json:
-  file.managed:
-    - name: /opt/kubernetes/ssl/metrics-server-csr.json
-    - source: salt://k8s/templates/kube-api-server/metrics-server-csr.json.template
-    - user: root
-    - group: root
-    - mode: 644
-    - template: jinja
-  cmd.run:
-    - name: cd /opt/kubernetes/ssl && /opt/kubernetes/bin/cfssl gencert -ca=/opt/kubernetes/ssl/ca.pem -ca-key=/opt/kubernetes/ssl/ca-key.pem -config=/opt/kubernetes/ssl/ca-config.json -profile=kubernetes metrics-server-csr.json | /opt/kubernetes/bin/cfssljson -bare metrics-server
-    - unless: test -f /opt/kubernetes/ssl/metrics-server.pem
-#将生成的秘钥拷贝到/etc/kubernetes/pki目录下
-pki-key:
-  cmd.run:
-    - name: cp /opt/kubernetes/ssl/apiserver-kubelet-client.pem /etc/kubernetes/pki/ && cp /opt/kubernetes/ssl/apiserver-kubelet-client-key.pem /etc/kubernetes/pki/ && cp /opt/kubernetes/ssl/metrics-server.pem /etc/kubernetes/pki/front-proxy-client.pem && cp /opt/kubernetes/ssl/metrics-server-key.pem /etc/kubernetes/pki/front-proxy-client-key.pem
-    - unless: test -f /etc/kubernetes/pki/front-proxy-client-key.pem
+#定义审计日志目录
+audit-log-dir:
+  file.directory:
+    - name: /var/log/kubernetes
+#定义加密配置文件
 api-auth-encryption-config:
   file.managed:
-    - name: /opt/kubernetes/ssl/encryption-config.yaml
+    - name: /etc/kubernetes/pki/encryption-config.yaml
     - source: salt://k8s/templates/kube-api-server/encryption-config.yaml.template
     - user: root
     - group: root
@@ -63,14 +31,53 @@ kube-apiserver-audit-yaml:
     - user: root
     - group: root
     - mode: 644
+
+#拷贝CA证书
+ca-pem-key-pki:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - names:
+      - /etc/kubernetes/pki/ca.pem
+        - source: salt://k8s/files/cert/ca.pem
+      - /etc/kubernetes/pki/ca-key.pem
+        - source: salt://k8s/files/cert/ca-key.pem
+
+#拷贝apiserver-kubelet-client证书
+kube-apiserver-cert:
+    file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - names:
+      - /etc/kubernetes/pki/apiserver-kubelet-client.pem
+        - source: salt://k8s/files/cert/apiserver-kubelet-client.pem
+      - /etc/kubernetes/pki/apiserver-kubelet-client-key.pem
+        - source: salt://k8s/files/cert/apiserver-kubelet-client-key.pem
+#拷贝metrics所使用的证书
+kubenetes-metrics-cert:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - names:
+      - /etc/kubernetes/pki/front-proxy-client.pem
+        - source: salt://k8s/files/cert/front-proxy-client.pem
+      - /srv/salt/k8s/files/cert/front-proxy-client-key.pem
+        - source: salt://k8s/files/cert/front-proxy-client-key.pem
+
+
+#拷贝kube-apiserver二进制文件
 kube-apiserver-bin:
   file.managed:
-    - name: /opt/kubernetes/bin/kube-apiserver
+    - name: /usr/local/bin/kube-apiserver
     - source: salt://k8s/files/{{ k8s_version }}/bin/kube-apiserver
     - user: root
     - group: root
     - mode: 755
     - template: jinja
+
 
 kube-apiserver-service:
   file.managed:

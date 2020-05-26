@@ -2,11 +2,11 @@
 #******************************************
 # Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: iokubernetes.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # Description:  Salt SSH Roster
 #******************************************
 
-linux-node1:
+c8-node1:
   host: 192.168.200.181
   user: root
   priv: /root/.ssh/id_rsa
@@ -15,9 +15,11 @@ linux-node1:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
-      admin-role: master
+      admin-role: admin
+      calico-role: admin
+      sa-role: admin
 
-linux-node2:
+c8-node2:
   host: 192.168.200.182
   user: root
   priv: /root/.ssh/id_rsa
@@ -27,7 +29,7 @@ linux-node2:
       etcd-role: node
       etcd-name: etcd-node2
 
-linux-node3:
+c8-node3:
   host: 192.168.200.183
   user: root
   priv: /root/.ssh/id_rsa
@@ -37,7 +39,7 @@ linux-node3:
       etcd-role: node
       etcd-name: etcd-node3
 
-linux-node4:
+c8-node4:
   host: 192.168.200.184
   user: root
   priv: /root/.ssh/id_rsa

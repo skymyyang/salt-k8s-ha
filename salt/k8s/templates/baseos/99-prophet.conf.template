@@ -10,7 +10,7 @@ RateLimitInterval=30s
 RateLimitBurst=1000
 
 # 最大占用空间 10G
-SystemMaxUse=10G
+SystemMaxUse=5G
 
 # 单日志文件最大 200M
 SystemMaxFileSize=200M

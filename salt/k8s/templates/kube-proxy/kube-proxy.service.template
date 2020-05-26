@@ -4,7 +4,7 @@ Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 After=network.target
 [Service]
 WorkingDirectory=/var/lib/kube-proxy
-ExecStart=/opt/kubernetes/bin/kube-proxy \
+ExecStart=/usr/local/bin/kube-proxy \
   --config=/etc/kubernetes/kube-proxy.config.yaml \
   --hostname-override={{ HOST_NAME }}
 

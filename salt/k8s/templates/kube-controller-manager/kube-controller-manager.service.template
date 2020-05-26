@@ -3,7 +3,7 @@ Description=Kubernetes Controller Manager
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 
 [Service]
-ExecStart=/opt/kubernetes/bin/kube-controller-manager \
+ExecStart=/usr/local/bin/kube-controller-manager \
   --allocate-node-cidrs=true \
   --authentication-kubeconfig=/etc/kubernetes/controller-manager.conf \
   --authorization-kubeconfig=/etc/kubernetes/controller-manager.conf \
@@ -22,7 +22,11 @@ ExecStart=/opt/kubernetes/bin/kube-controller-manager \
   --service-account-private-key-file=/etc/kubernetes/pki/ca-key.pem \
   --use-service-account-credentials=true \
   --horizontal-pod-autoscaler-use-rest-clients=true \
-  --horizontal-pod-autoscaler-sync-period=10s
+  --horizontal-pod-autoscaler-sync-period=10s \
+  --node-monitor-grace-period=10s \
+  --node-monitor-period=3s \
+  --node-startup-grace-period=20s \
+  --pod-eviction-timeout=10s
 
 Restart=on-failure
 RestartSec=5

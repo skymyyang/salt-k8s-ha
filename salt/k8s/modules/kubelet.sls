@@ -6,11 +6,9 @@
 # Description:  Kubernetes Node kubelet
 #******************************************
 
-{% set k8s_version = "k8s-v1.15.4" %}
-
+{% set k8s_version = "k8s-v1.18.2" %}
 
 include:
-  - k8s.modules.base-dir
   - k8s.modules.cni
   - k8s.modules.docker
 
@@ -21,26 +19,32 @@ kubelet-service-d:
   file.directory:
     - name: /usr/lib/systemd/system/kubelet.service.d
     - mode: 755
+
+
 #创建 kubelet bootstrap kubeconfig 文件
-kubeconfig-set-cluster:
-  cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server={{ pillar['KUBE_APISERVER'] }} --kubeconfig=kubelet-bootstrap.kubeconfig
+kubelet-bootstrap-kubeconfig:
+  file.managed:
+    - name: /etc/kubernetes/bootstrap-kubelet.conf
+    - source: salt://k8s/files/cert/bootstrap-kubelet.conf
+    - user: root
+    - group: root
+    - mode: 755
 
-kubeconfig-set-credentials:
-  cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-credentials kubelet-bootstrap --token={{ pillar['BOOTSTRAP_TOKEN'] }} --kubeconfig=kubelet-bootstrap.kubeconfig
-
-kubeconfig-set-context:
-  cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config set-context kubelet-bootstrap@kubernetes --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=kubelet-bootstrap.kubeconfig
-
-kubeconfig-use-context:
-  cmd.run:
-    - name: cd /opt/kubernetes/cfg && /opt/kubernetes/bin/kubectl config use-context kubelet-bootstrap@kubernetes --kubeconfig=kubelet-bootstrap.kubeconfig && cp /opt/kubernetes/cfg/kubelet-bootstrap.kubeconfig /etc/kubernetes/bootstrap-kubelet.conf
+#拷贝CA证书
+ca-pem-key-pki:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - names:
+      - /etc/kubernetes/pki/ca.pem
+        - source: salt://k8s/files/cert/ca.pem
+      - /etc/kubernetes/pki/ca-key.pem
+        - source: salt://k8s/files/cert/ca-key.pem
 
 kubelet-bin:
   file.managed:
-    - name: /opt/kubernetes/bin/kubelet
+    - name: /usr/local/bin/kubelet
     - source: salt://k8s/files/{{ k8s_version }}/bin/kubelet
     - user: root
     - group: root
