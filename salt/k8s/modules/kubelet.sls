@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       iokubernetes
+# Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: iokubernetes.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # Description:  Kubernetes Node kubelet
 #******************************************
 
@@ -15,6 +15,7 @@ include:
 kubelet-workdir:
   file.directory:
     - name: /var/lib/kubelet
+    - mode: 755
 kubelet-service-d:
   file.directory:
     - name: /usr/lib/systemd/system/kubelet.service.d
@@ -28,19 +29,27 @@ kubelet-bootstrap-kubeconfig:
     - source: salt://k8s/files/cert/bootstrap-kubelet.conf
     - user: root
     - group: root
-    - mode: 755
+    - mode: 644
 
 #拷贝CA证书
-ca-pem-key-pki:
+ca-pem-pki:
   file.managed:
     - user: root
     - group: root
     - mode: 644
-    - names:
-      - /etc/kubernetes/pki/ca.pem
-        - source: salt://k8s/files/cert/ca.pem
-      - /etc/kubernetes/pki/ca-key.pem
-        - source: salt://k8s/files/cert/ca-key.pem
+    - name: /etc/kubernetes/pki/ca.pem
+    - source: salt://k8s/files/cert/ca.pem
+    - replace: False
+
+
+ca-key-pem-pki:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - name: /etc/kubernetes/pki/ca-key.pem
+    - source: salt://k8s/files/cert/ca-key.pem
+    - replace: False
 
 kubelet-bin:
   file.managed:
@@ -77,23 +86,10 @@ kubelet-service:
     - user: root
     - group: root
     - mode: 644
-    # - template: jinja
-    # {% if grains['fqdn'] == pillar['MASTER_H1']  %}
-    # - ROLES: "master"
-    # {% elif grains['fqdn'] == pillar['MASTER_H2'] %}
-    # - ROLES: "master"
-    # {% elif grains['fqdn'] == pillar['MASTER_H3'] %}
-    # - ROLES: "master"
-    # {% else %}
-    # - ROLES: "node"
-    # {% endif %}
-    # - defaults:
-    #     HOST_NAME: {{ grains['fqdn'] }}
-
   cmd.run:
     - name: systemctl daemon-reload
   service.running:
     - name: kubelet
     - enable: True
     - watch:
-      - file: kubelet-service
+      - file: kubelet-kubeadm-conf

@@ -28,7 +28,7 @@ kube-controller-manager-kubeconfig:
     - source: salt://k8s/files/cert/controller-manager.conf
     - user: root
     - group: root
-    - mode: 755
+    - mode: 644
 
 
 kube-controller-manager-service:
@@ -41,7 +41,6 @@ kube-controller-manager-service:
     - template: jinja
     - defaults:
         SERVICE_CIDR: {{ pillar['SERVICE_CIDR'] }}
-        CLUSTER_CIDR: {{ pillar['CLUSTER_CIDR'] }}
   cmd.run:
     - name: systemctl daemon-reload
   service.running:

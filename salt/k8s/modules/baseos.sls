@@ -34,9 +34,6 @@ swap-off:
 firewalld-off:
   cmd.run:
     - name: /usr/bin/systemctl stop firewalld && /usr/bin/systemctl disable firewalld
-selinux-off:
-  cmd.run:
-    - name: /usr/sbin/setenforce 0 && /usr/bin/sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 
 
 #安装依赖包

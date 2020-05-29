@@ -1,7 +1,7 @@
 [Unit]
 Description=Kubernetes Kube-Proxy Server
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
-After=network.target
+After=NetworkManager.target
 [Service]
 WorkingDirectory=/var/lib/kube-proxy
 ExecStart=/usr/local/bin/kube-proxy \

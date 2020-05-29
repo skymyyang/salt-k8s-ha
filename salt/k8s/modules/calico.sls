@@ -6,8 +6,10 @@ calico-yaml-install:
     - source: salt://k8s/templates/calico/calico.yaml.template
     - user: root
     - group: root
-    - mode: 755
+    - mode: 644
     - template: jinja
     - defaults:
         POD_CIDR: {{ pillar['POD_CIDR'] }}
-  cmd.run: /usr/local/kubectl apply -f  /etc/kubernetes/calico.yaml
+        VIP_IF: {{ pillar['VIP_IF'] }}
+  cmd.run: 
+    - name: /usr/local/bin/kubectl apply -f  /etc/kubernetes/calico.yaml

@@ -1,8 +1,6 @@
 [Unit]
 Description=kube-apiserver nginx proxy
-After=network.target
-After=network-online.target
-Wants=network-online.target
+After=NetworkManager.target
 
 [Service]
 Type=forking

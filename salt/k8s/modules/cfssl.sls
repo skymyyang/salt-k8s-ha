@@ -8,14 +8,12 @@
 {% set cfssl_version = "1.4.1" %}
 {% set k8s_version = "k8s-v1.18.2" %}
 
-{# include:
-  - k8s.modules.baseos #}
 
 #安装cfssl工具集
 cfssl-certinfo:
   file.managed:
     - name: /usr/local/bin/cfssl-certinfo
-    - source: salt://k8s/files/cfssl/cfssl-certinfo_{{ cfssl_version }}_linux-amd64
+    - source: salt://k8s/files/cfssl/cfssl-certinfo_{{ cfssl_version }}_linux_amd64
     - user: root
     - group: root
     - mode: 755
@@ -23,7 +21,7 @@ cfssl-certinfo:
 cfssl-json:
   file.managed:
     - name: /usr/local/bin/cfssljson
-    - source: salt://k8s/files/cfssl/cfssljson_{{ cfssl_version }}_linux-amd64
+    - source: salt://k8s/files/cfssl/cfssljson_{{ cfssl_version }}_linux_amd64
     - user: root
     - group: root
     - mode: 755
@@ -31,7 +29,7 @@ cfssl-json:
 cfssl:
   file.managed:
     - name: /usr/local/bin/cfssl
-    - source: salt://k8s/files/cfssl/cfssl_{{ cfssl_version }}_linux-amd64
+    - source: salt://k8s/files/cfssl/cfssl_{{ cfssl_version }}_linux_amd64
     - user: root
     - group: root
     - mode: 755
@@ -44,3 +42,9 @@ kubectl-bin:
     - user: root
     - group: root
     - mode: 755
+#配置opensshl工具
+init-pkg:
+  pkg.installed:
+    - names:
+      - openssl
+      - openssl-devel

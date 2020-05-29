@@ -1,7 +1,7 @@
 [Unit]
 Description=Kubernetes API Server
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
-After=network.target
+After=NetworkManager.target
 
 [Service]
 ExecStart=/usr/local/bin/kube-apiserver \
@@ -37,7 +37,7 @@ ExecStart=/usr/local/bin/kube-apiserver \
   --audit-log-maxsize=100 \
   --audit-log-path=/var/log/kubernetes/kube-apiserver-audit.log \
   --audit-policy-file=/etc/kubernetes/audit-policy.yaml \
-  --runtime-config=api/all,settings.k8s.io/v1alpha1=true
+  --runtime-config=api/all=true
 Restart=on-failure
 RestartSec=10
 Type=notify

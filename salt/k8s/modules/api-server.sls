@@ -33,16 +33,23 @@ kube-apiserver-audit-yaml:
     - mode: 644
 
 #拷贝CA证书
-ca-pem-key-pki:
+ca-pem-pki:
   file.managed:
     - user: root
     - group: root
     - mode: 644
-    - names:
-      - /etc/kubernetes/pki/ca.pem
-        - source: salt://k8s/files/cert/ca.pem
-      - /etc/kubernetes/pki/ca-key.pem
-        - source: salt://k8s/files/cert/ca-key.pem
+    - name: /etc/kubernetes/pki/ca.pem
+    - source: salt://k8s/files/cert/ca.pem
+
+
+ca-key-pem-pki:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - name: /etc/kubernetes/pki/ca-key.pem
+    - source: salt://k8s/files/cert/ca-key.pem
+
 
 #拷贝apiserver-kubelet-client证书
 kube-apiserver-cert:
@@ -50,23 +57,35 @@ kube-apiserver-cert:
     - user: root
     - group: root
     - mode: 644
-    - names:
-      - /etc/kubernetes/pki/apiserver-kubelet-client.pem
-        - source: salt://k8s/files/cert/apiserver-kubelet-client.pem
-      - /etc/kubernetes/pki/apiserver-kubelet-client-key.pem
-        - source: salt://k8s/files/cert/apiserver-kubelet-client-key.pem
+    - name: /etc/kubernetes/pki/apiserver-kubelet-client.pem
+    - source: salt://k8s/files/cert/apiserver-kubelet-client.pem
+
+
+kube-apiserver-cert-key:
+    file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - name: /etc/kubernetes/pki/apiserver-kubelet-client-key.pem
+    - source: salt://k8s/files/cert/apiserver-kubelet-client-key.pem
+
 #拷贝metrics所使用的证书
 kubenetes-metrics-cert:
   file.managed:
     - user: root
     - group: root
     - mode: 644
-    - names:
-      - /etc/kubernetes/pki/front-proxy-client.pem
-        - source: salt://k8s/files/cert/front-proxy-client.pem
-      - /srv/salt/k8s/files/cert/front-proxy-client-key.pem
-        - source: salt://k8s/files/cert/front-proxy-client-key.pem
+    - name: /etc/kubernetes/pki/front-proxy-client.pem
+    - source: salt://k8s/files/cert/front-proxy-client.pem
 
+
+kubenetes-metrics-cert-key:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 644
+    - name: /etc/kubernetes/pki/front-proxy-client-key.pem
+    - source: salt://k8s/files/cert/front-proxy-client-key.pem
 
 #拷贝kube-apiserver二进制文件
 kube-apiserver-bin:

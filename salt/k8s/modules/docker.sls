@@ -6,9 +6,6 @@
 # Description:  Docker Install
 #******************************************
 
-include:
-  - k8s.modules.baseos
-
 
 #安装docker
 docker-install:
@@ -42,10 +39,11 @@ docker-daemon-config:
     - mode: 644
 
 #定义服务启动
-#防止FORWARD的DROP策略影响转发,给docker daemon添加下列参数修正，当然暴力点也可以iptables -P FORWARD ACCEPT，具体参数查看10-docker.conf配置文件
-docker-service:
+systemctl-docker-service.d:
   file.directory:
     - name: /etc/systemd/system/docker.service.d
+#防止FORWARD的DROP策略影响转发,给docker daemon添加下列参数修正，当然暴力点也可以iptables -P FORWARD ACCEPT，具体参数查看10-docker.conf配置文件
+docker-service:
   file.managed:
      - name: /etc/systemd/system/docker.service.d/10-docker.conf
      - source: salt://k8s/templates/docker/10-docker.conf.template

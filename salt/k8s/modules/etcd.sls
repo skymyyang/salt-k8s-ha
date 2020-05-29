@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #******************************************
-# Author:       iokubernetes
+# Author:       skymyyang
 # Email:        yang-li@live.cn
-# Organization: iokubernetes.github.io
+# Organization: https://www.cnblogs.com/skymyyang/
 # Description:  ETCD Cluster
 #******************************************
 {% set etcd_version = "etcd-v3.4.8-linux-amd64" %}
@@ -35,18 +35,6 @@ etcd-config-dir:
   file.directory:
     - name: /etc/etcd
 
-etcd-config:
-  file.managed:
-    - name: /etc/etcd/etcd.config.yml
-    - source: salt://k8s/templates/etcd/etcd.confing.yml.template
-    - user: root
-    - group: root
-    - mode: 644
-    - template: jinja
-    - defaults:
-        NODE_IP: {{ grains['fqdn_ip4'][0] }}
-        ETCD_NAME: {{ grains['etcd-name'] }}
-        ETCD_CLUSTER: {{ pillar['ETCD_CLUSTER'] }}
 
 etcd-service:
   file.managed:
@@ -55,8 +43,11 @@ etcd-service:
     - user: root
     - group: root
     - mode: 644
-    - watch:
-      - file: etcd-config
+    - template: jinja
+    - defaults:
+        NODE_IP: {{ grains['fqdn_ip4'][0] }}
+        ETCD_NAME: {{ grains['etcd-name'] }}
+        ETCD_CLUSTER: {{ pillar['ETCD_CLUSTER'] }}
   cmd.run:
     - name: systemctl daemon-reload
     - watch:

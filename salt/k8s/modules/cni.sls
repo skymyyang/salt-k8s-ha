@@ -7,26 +7,6 @@
 #******************************************
 {% set cni_version = "cni-plugins-linux-amd64-v0.8.6" %}
 
-{# cni-dir:
-  file.directory:
-    - name: /etc/cni
-
-cni-dir-net:
-  file.directory:
-    - name: /etc/cni/net.d
-    - makedirs: True
-
-cni-default-conf:
-  file.managed:
-    - name: /etc/cni/net.d/10-flannel.conflist
-    - source: salt://k8s/templates/cni/10-flannel.conflist.template
-    - user: root
-    - group: root
-    - mode: 644
-    - template: jinja #}
-
-
-
 cni-dir-net:
   file.directory:
     - name: /etc/cni/net.d

@@ -13,13 +13,6 @@ kube-proxy-workdir:
   file.directory:
     - name: /var/lib/kube-proxy
 
-kube-proxy-csr-json:
-  file.managed:
-    - name: /etc/kubernetes/sslcert/kube-proxy-csr.json
-    - source: salt://k8s/templates/kube-proxy/kube-proxy-csr.json.template
-    - user: root
-    - group: root
-    - mode: 644
 
 #拷贝kube-proxy kubeconfig配置文件
   
@@ -28,8 +21,8 @@ kube-proxy-kubeconfig:
     - user: root
     - group: root
     - mode: 644
-    - name: /etc/kubernetes/kube-proxy.kubeconfig
-    - source: salt://k8s/files/cert/kube-proxy.kubeconfig
+    - name: /etc/kubernetes/proxy.config
+    - source: salt://k8s/files/cert/proxy.config
 
 kube-proxy-bin:
   file.managed:

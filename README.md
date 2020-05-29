@@ -74,18 +74,17 @@ c8-node4.example.com
 
 ```bash
 [root@c8-node1 ~]# cat /etc/hosts
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 192.168.200.181 c8-node1 c8-node1.example.com
 192.168.200.182 c8-node2 c8-node2.example.com
 192.168.200.183 c8-node3 c8-node3.example.com
 192.168.200.184 c8-node4 c8-node4.example.com
+127.0.0.1 server.k8s.local
 ```
 
-3. 关闭SELinux和防火墙以及NetworkManager，并配置chrony进行确保时间同步
+3. 关闭SELinux和防火墙，并配置chrony进行确保时间同步,由于centos8 默认使用NetworkManager，这里不能禁用。
 
 ```bash
-shell> systemctl disable --now firewalld NetworkManager
+shell> systemctl disable --now firewalld
 shell> setenforce 0
 shell> sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 shell> yum install chrony -y
@@ -99,23 +98,23 @@ shell> systemctl restart chronyd
 
 ## 1.设置部署节点到其它所有节点的SSH免密码登录（包括本机）
 ```bash
-[root@linux-node1 ~]# ssh-keygen -t rsa
-[root@linux-node1 ~]# ssh-copy-id linux-node1
-[root@linux-node1 ~]# ssh-copy-id linux-node2
-[root@linux-node1 ~]# ssh-copy-id linux-node3
-[root@linux-node1 ~]# ssh-copy-id linux-node4
-[root@linux-node1 ~]# scp /etc/hosts linux-node2:/etc/
-[root@linux-node1 ~]# scp /etc/hosts linux-node3:/etc/
-[root@linux-node1 ~]# scp /etc/hosts linux-node4:/etc/
+[root@c8-node1 ~]# ssh-keygen -t rsa
+[root@c8-node1 ~]# ssh-copy-id c8-node1
+[root@c8-node1 ~]# ssh-copy-id c8-node2
+[root@c8-node1 ~]# ssh-copy-id c8-node3
+[root@c8-node1 ~]# ssh-copy-id c8-node4
+[root@c8-node1 ~]# scp /etc/hosts c8-node2:/etc/
+[root@c8-node1 ~]# scp /etc/hosts c8-node3:/etc/
+[root@c8-node1 ~]# scp /etc/hosts c8-node4:/etc/
 ```
 
 ## 2.安装Salt-SSH并克隆本项目代码。
 
-2.1 安装Salt SSH（注意：老版本的Salt SSH不支持Roster定义Grains，需要2017.7.4以上版本）
+2.1 安装Salt SSH（注意：老版本的Salt SSH不支持Roster定义Grains，需要2017.7.4以上版本），因此此salt版本基于Python3，所以以下命令需要在所有的节点上执行。
 ```bash
-[root@linux-node1 ~]# yum install https://repo.saltstack.com/py3/redhat/salt-py3-repo-latest.el8.noarch.rpm
+[root@linux-node1 ~]# yum install https://repo.saltstack.com/py3/redhat/salt-py3-repo-latest.el8.noarch.rpm -y
 [root@linux-node1 ~]# sed -i "s/repo.saltstack.com/mirrors.aliyun.com\/saltstack/g" /etc/yum.repos.d/salt-py3-latest.repo
-[root@linux-node1 ~]# yum install -y salt-ssh git unzip p7zip
+[root@linux-node1 ~]# yum install -y salt-ssh git unzip
 ```
 
 2.2 获取本项目 `master` 分支代码，并放置在 `/srv` 目录
@@ -284,7 +283,7 @@ VIP_IF: "ens192"
 - `--quota-backend-bytes` ETCD db数据大小，默认是2G，当数据达到2G的时候就不允许写入，必须对历史数据进行压缩才能继续写入;参加1里面说的，我们启动的时候就应该提前确定大小，官方推荐是8G，这里我们也使用8G的配置
 
 ```bash
-[root@linux-node1 ~]# salt-ssh -L 'linux-node1,linux-node2,linux-node3' state.sls k8s.etcd
+[root@linux-node1 ~]# salt-ssh -L 'c8-node1,c8-node2,c8-node3' state.sls k8s.etcd
 ```
 注：如果执行失败，新手建议推到重来，请检查各个节点的主机名解析是否正确（监听的IP地址依赖主机名解析）。
 
@@ -293,33 +292,33 @@ VIP_IF: "ens192"
 这里首先安装master，由于worker节点的flannel的kubeconfig配置文件依赖API-server，所以必须先要部署master节点。
 
 ```bash
-[root@linux-node1 ~]# salt-ssh -L 'linux-node1,linux-node2,linux-node3' state.sls k8s.master
+[root@c8-node1 ~]# salt-ssh -L 'c8-node1,c8-node2,c8-node3' state.sls k8s.master
 ```
 由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！执行过程中存在cfssl生成证书的warning，大家可以忽略。
 
 5.4 配置集群所需的RBAC的角色验证
 
 ```bash
-[root@linux-node1 ~]# salt-ssh -L 'linux-node1' state.sls k8s.admin
+[root@c8-node1 ~]# salt-ssh -L 'c8-node1' state.sls k8s.admin
 ```
 5.5 部署K8S集群worker节点
 
 ```bash
-[root@linux-node1 ~]# salt-ssh 'linux-node4' state.highstate
+[root@c8-node1 ~]# salt-ssh 'c8-node4' state.highstate
 ```
 
 5.6 设置每个节点的roles
 
 ```bash
 #在master节点上执行,并为master节点加上污点Taint
-/opt/kubernetes/bin/kubectl label node linux-node1 node-role.kubernetes.io/master=""
-/opt/kubernetes/bin/kubectl label node linux-node2 node-role.kubernetes.io/master=""
-/opt/kubernetes/bin/kubectl label node linux-node3 node-role.kubernetes.io/master=""
-/opt/kubernetes/bin/kubectl taint nodes linux-node1 node-role.kubernetes.io/master="":NoSchedule
-/opt/kubernetes/bin/kubectl taint nodes linux-node2 node-role.kubernetes.io/master="":NoSchedule
-/opt/kubernetes/bin/kubectl taint nodes linux-node3 node-role.kubernetes.io/master="":NoSchedule
+kubectl label node c8-node1 node-role.kubernetes.io/master=""
+kubectl label node c8-node2 node-role.kubernetes.io/master=""
+kubectl label node c8-node3 node-role.kubernetes.io/master=""
+kubectl taint nodes c8-node1 node-role.kubernetes.io/master="":NoSchedule
+kubectl taint nodes c8-node2 node-role.kubernetes.io/master="":NoSchedule
+kubectl taint nodes c8-node3 node-role.kubernetes.io/master="":NoSchedule
 #在node节点上执行
-kubectl label node linux-node4 node-role.kubernetes.io/worker=worker
+kubectl label node c8-node4 node-role.kubernetes.io/worker=worker
 ```
 ## 6.测试Kubernetes安装
 

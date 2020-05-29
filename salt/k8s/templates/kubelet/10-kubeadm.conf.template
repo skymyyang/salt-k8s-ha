@@ -11,4 +11,4 @@ EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
 Environment="KUBELET_CGROUP_ARGS=--system-reserved=memory=300Mi --kube-reserved=memory=400Mi --eviction-hard=imagefs.available<15%,memory.available<300Mi,nodefs.available<10%,nodefs.inodesFree<5% --cgroup-driver=systemd"
 EnvironmentFile=-/etc/sysconfig/kubelet
 ExecStart=
-ExecStart=/opt/kubernetes/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS $KUBELET_NETWORK_ARGS $KUBELET_CGROUP_ARGS $KUBELET_SYSTEM_PODS_ARGS
+ExecStart=/usr/local/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS $KUBELET_NETWORK_ARGS $KUBELET_CGROUP_ARGS $KUBELET_SYSTEM_PODS_ARGS

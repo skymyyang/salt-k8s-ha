@@ -2,6 +2,7 @@
     "CN": "system:kube-scheduler",
     "hosts": [
       "127.0.0.1",
+      "{{ KUBE_APISERVER_DNS_NAME }}",
       "{{ MASTER_IP_M1 }}",
       "{{ MASTER_IP_M2 }}",
       "{{ MASTER_IP_M3 }}",
