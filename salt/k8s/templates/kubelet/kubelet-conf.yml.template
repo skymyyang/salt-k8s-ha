@@ -40,6 +40,8 @@ evictionHard:
   nodefs.inodesFree: 5%
 evictionPressureTransitionPeriod: 5m0s
 failSwapOn: true
+featureGates:
+  CSIMigration: false
 fileCheckFrequency: 20s
 hairpinMode: promiscuous-bridge
 healthzBindAddress: 127.0.0.1

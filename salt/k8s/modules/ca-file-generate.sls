@@ -222,27 +222,6 @@ kubectl-scheduler-use:
     - force: True
 
 
-#创建 kubelet bootstrap kubeconfig 文件
-#向 kubeconfig 写入的是 token，bootstrap 结束后 kube-controller-manager 为 kubelet 创建 client 和 server 证书；
-
-kubelet-bootstrap-kubeconfig:
-  file.managed:
-    - name: /etc/kubernetes/sslcert/tls-bootstrap-secret-kubeconfig.sh
-    - source: salt://k8s/templates/ca/tls-bootstrap-secret-kubeconfig.sh.template
-    - user: root
-    - group: root
-    - mode: 755
-  cmd.run:
-    - name: /bin/bash /etc/kubernetes/sslcert/tls-bootstrap-secret-kubeconfig.sh
-    - unless: test -f /etc/kubernetes/sslcert/bootstrap-kubelet.conf
-  file.copy:
-    - user: root
-    - group: root
-    - mode: 644
-    - name: /srv/salt/k8s/files/cert/bootstrap-kubelet.conf
-    - source: /etc/kubernetes/sslcert/bootstrap-kubelet.conf
-    - force: True
-
 #创建 kube-proxy 证书
 kube-proxy-csr-json:
   file.managed:

@@ -8,7 +8,7 @@
 - Kernel Version: 4.18.0-147.8.1.el8_1.x86_64
 - salt-ssh:     3000.3-1.el8
 - Kubernetes：  v1.18.2
-- Etcd:         v3.4.8
+- Etcd:         v3.4.9
 - Docker-ce:    v18.09.2
 - Calico：     v0.11.0
 - CNI-Plugins： v0.8.6

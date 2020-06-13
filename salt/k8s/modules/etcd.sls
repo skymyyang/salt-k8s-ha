@@ -5,7 +5,7 @@
 # Organization: https://www.cnblogs.com/skymyyang/
 # Description:  ETCD Cluster
 #******************************************
-{% set etcd_version = "etcd-v3.4.8-linux-amd64" %}
+{% set etcd_version = "etcd-v3.4.9-linux-amd64" %}
 
 
 
