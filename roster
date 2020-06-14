@@ -13,10 +13,12 @@ c8-node1:
   minion_opts:
     grains:
       worker-role: node
-      k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
-      admin-role: admin
+      ca-file-role: admin
+      kubelet-role: node
+      k8s-role: master
+      kubelet-bootstrap-role: admin
       calico-role: admin
 
 c8-node2:
@@ -25,10 +27,11 @@ c8-node2:
   priv: /root/.ssh/id_rsa
   minion_opts:
     grains:
-      k8s-role: master
+      worker-role: node
       etcd-role: node
       etcd-name: etcd-node2
-      worker-role: node
+      k8s-role: master
+      kubelet-role: node
 
 c8-node3:
   host: 192.168.200.183
@@ -36,10 +39,11 @@ c8-node3:
   priv: /root/.ssh/id_rsa
   minion_opts:
     grains:
-      k8s-role: master
+      worker-role: node     
       etcd-role: node
       etcd-name: etcd-node3
-      worker-role: node
+      k8s-role: master   
+      kubelet-role: node
 
 c8-node4:
   host: 192.168.200.184
@@ -47,5 +51,5 @@ c8-node4:
   priv: /root/.ssh/id_rsa
   minion_opts:
     grains:
-      k8s-role: node
       worker-role: node
+      kubelet-role: node

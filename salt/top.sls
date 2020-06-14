@@ -9,20 +9,20 @@
 base:
   'worker-role: node':
     - match: grain
-    - k8s.worker
+    - k8s.baseset
   'etcd-role:node':
     - match: grain
     - k8s.etcd
-  'admin-role:admin':
+  'ca-file-role: admin':
     - match: grain
     - k8s.modules.ca-file-generate
   'k8s-role:master':
     - match: grain
     - k8s.master
-  'admin-role:admin':
+  'kubelet-bootstrap-role: admin':
     - match: grain
     - k8s.modules.kubelet-bootstrap-kubeconfig
-  'worker-role: node':
+  'kubelet-role: node':
     - match: grain
     - k8s.node
   'calico-role:admin':

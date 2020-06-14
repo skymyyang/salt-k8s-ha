@@ -3,14 +3,14 @@
 - SaltStack自动化部署Kubernetes v1.15.4版本（支持HA、TLS双向认证、RBAC授权、Flannel网络、ETCD集群、Kuber-Proxy使用LVS等）。
 
 
-## 版本明细：Release-v1.15.4
+## 版本明细：Release-v1.18.2
 - 测试通过系统：CentOS 8.1
 - Kernel Version: 4.18.0-147.8.1.el8_1.x86_64
 - salt-ssh:     3000.3-1.el8
 - Kubernetes：  v1.18.2
 - Etcd:         v3.4.9
 - Docker-ce:    v18.09.2
-- Calico：     v0.11.0
+- Calico：     v3.14.0
 - CNI-Plugins： v0.8.6
 - nginx:        v1.18.0
 
@@ -88,8 +88,7 @@ shell> systemctl disable --now firewalld
 shell> setenforce 0
 shell> sed -ri '/^[^#]*SELINUX=/s#=.+$#=disabled#' /etc/selinux/config
 shell> yum install chrony -y
-shell> systemctl enable chronyd
-shell> systemctl restart chronyd
+shell> systemctl enable chronyd && systemctl restart chronyd
 ```
 
 
@@ -127,7 +126,7 @@ shell> systemctl restart chronyd
 [root@linux-node1 srv]# /bin/cp /srv/master /etc/salt/master
 ```
 
-2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.15.4-auto.7z` 。
+2.4 下载二进制文件，也可以自行官方下载，为了方便国内用户访问，请在百度云盘下载,下载 `k8s-v1.18.2-auto.7z` 。
 下载完成后，将文件移动到 `/srv/salt/k8s/` 目录下，并解压，注意是 `files` 目录在 `/srv/salt/k8s/`目录下。
 Kubernetes二进制文件下载地址： 链接：`https://pan.baidu.com/s/1I_3PI8gsY1lvfd96zn7Zsg&shfl=sharepset`
 提取码：`lfwq`
@@ -152,6 +151,11 @@ drwx------ 2 root root  33 Mar 18 20:17 nginx-1.16.1
 - k8s-role: 用来设置K8S的角色
 - etcd-role: 用来设置etcd的角色，如果只需要部署一个etcd，只需要在一台机器上设置即可
 - etcd-name: 如果对一台机器设置了etcd-role就必须设置etcd-name
+- worker-role: 所有节点均为worker节点
+- ca-file-role: 定义c8-node1为证书生成节点
+- kubelet-bootstrap-role: 在c8-node1上生成kubelet-bootstrap的kubeconfig配置文件，然后再拷贝至各个节点
+- kubelet-role: 所有的节点都需要安装kubelet
+- calico-role: 在c8-node1的管理节点上安装并配置calico网络
 
 [root@linux-node1 ~]# vim /etc/salt/roster
 
@@ -163,12 +167,12 @@ c8-node1:
   priv: /root/.ssh/id_rsa
   minion_opts:
     grains:
+      worker-role: node
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
       admin-role: admin
       calico-role: admin
-      sa-role: admin
 
 c8-node2:
   host: 192.168.200.182
@@ -179,6 +183,7 @@ c8-node2:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node2
+      worker-role: node
 
 c8-node3:
   host: 192.168.200.183
@@ -189,6 +194,7 @@ c8-node3:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node3
+      worker-role: node
 
 c8-node4:
   host: 192.168.200.184
@@ -197,6 +203,7 @@ c8-node4:
   minion_opts:
     grains:
       k8s-role: node
+      worker-role: node
 ```
 
 ## 4.修改对应的配置参数，本项目使用Salt Pillar保存配置
@@ -264,12 +271,16 @@ VIP_IF: "ens192"
 
 ## 5.执行SaltStack状态
 
-5.1 测试Salt SSH联通性
+5.1 测试Salt SSH联通性以及基础设置
 
 ```bash
 [root@k8s-m1 ~]# salt-ssh '*' test.ping
 ```
 执行高级状态，会根据定义的角色再对应的机器部署对应的服务
+
+```bash
+[root@c8-node1 ~]# salt-ssh -L '*' state.sls k8s.baseset
+```
 
 5.2 部署Etcd，由于Etcd是基础组建，需要先部署，目标为部署etcd的节点。
 
@@ -292,22 +303,30 @@ VIP_IF: "ens192"
 这里首先安装master，由于worker节点的flannel的kubeconfig配置文件依赖API-server，所以必须先要部署master节点。
 
 ```bash
+#1. 先生成master相关的证书
+[root@c8-node1 ~]# salt-ssh -L 'c8-node1' state.sls k8s.modules.ca-file-generate
+#2. 部署master节点
 [root@c8-node1 ~]# salt-ssh -L 'c8-node1,c8-node2,c8-node3' state.sls k8s.master
 ```
 由于包比较大，这里执行时间较长，5分钟+，喝杯咖啡休息一下，如果执行有失败可以再次执行即可！执行过程中存在cfssl生成证书的warning，大家可以忽略。
 
-5.4 配置集群所需的RBAC的角色验证
+5.4 生成kubelet-bootstrap-kubeconfig配置文件
 
 ```bash
-[root@c8-node1 ~]# salt-ssh -L 'c8-node1' state.sls k8s.admin
+[root@c8-node1 ~]# salt-ssh -L 'c8-node1' state.sls k8s.modules.kubelet-bootstrap-kubeconfig
 ```
-5.5 部署K8S集群worker节点
+5.5 部署K8S集群worker节点,由于master也要安装kubelet以及kube-proxy，这里需要全部安装
 
 ```bash
-[root@c8-node1 ~]# salt-ssh 'c8-node4' state.highstate
+[root@c8-node1 ~]# salt-ssh 'c8-node1,c8-node2,c8-node3,c8-node4' state.sls k8s.node
+```
+5.6 部署calico网络以及coredns
+
+```bash
+[root@c8-node1 ~]# salt-ssh -L 'c8-node1' state.sls k8s.modules.calico
 ```
 
-5.6 设置每个节点的roles
+5.7 设置每个节点的roles
 
 ```bash
 #在master节点上执行,并为master节点加上污点Taint
