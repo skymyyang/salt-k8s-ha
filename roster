@@ -12,12 +12,12 @@ c8-node1:
   priv: /root/.ssh/id_rsa
   minion_opts:
     grains:
+      worker-role: node
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node1
       admin-role: admin
       calico-role: admin
-      sa-role: admin
 
 c8-node2:
   host: 192.168.200.182
@@ -28,6 +28,7 @@ c8-node2:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node2
+      worker-role: node
 
 c8-node3:
   host: 192.168.200.183
@@ -38,6 +39,7 @@ c8-node3:
       k8s-role: master
       etcd-role: node
       etcd-name: etcd-node3
+      worker-role: node
 
 c8-node4:
   host: 192.168.200.184
@@ -46,3 +48,4 @@ c8-node4:
   minion_opts:
     grains:
       k8s-role: node
+      worker-role: node

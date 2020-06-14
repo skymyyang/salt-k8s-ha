@@ -7,8 +7,6 @@
 #******************************************
 
 include:
-  - k8s.modules.baseos
-  - k8s.modules.nginx
   - k8s.modules.kubelet
   - k8s.modules.kube-proxy
 
